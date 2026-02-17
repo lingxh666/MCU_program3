@@ -1,0 +1,853 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Root>
+    <WorkBenchVersion>
+        <Version>V1.2.02</Version>
+    </WorkBenchVersion>
+    <MCUInfo>
+        <MCUSerials>AT32F435</MCUSerials>
+        <MCUName>AT32F435VGT7</MCUName>
+        <MCUPackage>LQFP100</MCUPackage>
+    </MCUInfo>
+    <ACC>
+        <Mode>
+            <ModeSub name="ACC_State" value="TRUE"/>
+        </Mode>
+    </ACC>
+    <ADC-Common>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Clock" value="72000000"/>
+        </Parameters>
+    </ADC-Common>
+    <ADC1>
+        <Mode>
+            <ModeSub name="IN0" value="TRUE"/>
+            <ModeSub name="IN2" value="TRUE"/>
+            <ModeSub name="IN3" value="TRUE"/>
+            <ModeSub name="IN4" value="TRUE"/>
+            <ModeSub name="IN5" value="TRUE"/>
+            <ModeSub name="IN6" value="TRUE"/>
+            <ModeSub name="IN7" value="TRUE"/>
+            <ModeSub name="IN8" value="TRUE"/>
+            <ModeSub name="IN10" value="TRUE"/>
+            <ModeSub name="IN11" value="TRUE"/>
+            <ModeSub name="IN14" value="TRUE"/>
+            <ModeSub name="IN15" value="TRUE"/>
+            <ModeSub name="VINTRV" value="TRUE"/>
+            <ModeSub name="VBAT" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="EnableOrdinaryConversion" value="ENABLE"/>
+            <ParametersSub name="RepeatMode" value="TRUE"/>
+            <ParametersSub name="OrdinaryTriggerSource" value="ADC_ORDINARY_TRIG_SOFTWARE"/>
+            <ParametersSub name="NbrOfOrdinarySequence" value="12"/>
+            <ParametersSub name="Channel_OrdinarySequence_1" value="ADC_CHANNEL_0"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_1" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_1" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_2" value="ADC_CHANNEL_2"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_2" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_2" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_3" value="ADC_CHANNEL_3"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_3" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_3" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_4" value="ADC_CHANNEL_4"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_4" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_4" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_5" value="ADC_CHANNEL_5"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_5" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_5" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_6" value="ADC_CHANNEL_6"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_6" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_6" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_7" value="ADC_CHANNEL_7"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_7" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_7" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_8" value="ADC_CHANNEL_10"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_8" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_8" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_9" value="ADC_CHANNEL_11"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_9" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_9" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_10" value="ADC_CHANNEL_14"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_10" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_10" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_11" value="ADC_CHANNEL_15"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_11" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_11" value="0.277"/>
+            <ParametersSub name="Channel_OrdinarySequence_12" value="ADC_CHANNEL_8"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_12" value="ADC_SAMPLETIME_247_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_12" value="0.277"/>
+        </Parameters>
+    </ADC1>
+    <ADC2>
+        <Mode>
+            <ModeSub name="IN1" value="TRUE"/>
+            <ModeSub name="IN12" value="TRUE"/>
+        </Mode>
+    </ADC2>
+    <CAN1>
+        <Mode>
+            <ModeSub name="CAN_Activate" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="500"/>
+            <ParametersSub name="Sample_Point" value="87.5"/>
+            <ParametersSub name="BaudRate_Division" value="36"/>
+            <ParametersSub name="BTS1" value="CAN_BTS1_6TQ"/>
+            <ParametersSub name="BTS2" value="CAN_BTS2_1TQ"/>
+            <ParametersSub name="RSAW" value="CAN_RSAW_1TQ"/>
+        </Parameters>
+    </CAN1>
+    <CRC>
+        <Mode>
+            <ModeSub name="CRC_State" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="InitValue" value="0x0000FFFF"/>
+            <ParametersSub name="CRCPolynomialLength" value="CRC_POLY_SIZE_16B"/>
+            <ParametersSub name="CRCPolynomialValue_16" value="0x8005"/>
+            <ParametersSub name="InputDataReverseMode" value="CRC_REVERSE_INPUT_BY_BYTE"/>
+            <ParametersSub name="OutputDataReverseMode" value="CRC_REVERSE_OUTPUT_DATA"/>
+        </Parameters>
+    </CRC>
+    <CRM>
+        <Mode>
+            <ModeSub name="HEXT" value="HEXT-External-Oscillator"/>
+            <ModeSub name="LEXT" value="LEXT-External-Oscillator"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="HEXT" value="HEXT_CRYSTAL"/>
+            <ParametersSub name="LEXT" value="LEXT_CRYSTAL"/>
+        </Parameters>
+    </CRM>
+    <DEBUG>
+        <Mode>
+            <ModeSub name="Debug interface" value="SWD"/>
+        </Mode>
+    </DEBUG>
+    <ERTC>
+        <Mode>
+            <ModeSub name="ERTC_Enabled" value="TRUE"/>
+            <ModeSub name="ERTC_Calendar" value="TRUE"/>
+        </Mode>
+    </ERTC>
+    <EXINT>
+        <Mode>
+            <ModeSub name="EXINT4" value="TRUE"/>
+            <ModeSub name="EXINT7" value="TRUE"/>
+        </Mode>
+    </EXINT>
+    <QSPI2>
+        <Mode>
+            <ModeSub name="QSPI_State" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="ClockFrequency" value="36000000"/>
+        </Parameters>
+    </QSPI2>
+    <SYSTEM>
+        <Mode>
+            <ModeSub name="Time_Base" value="TMR5"/>
+            <ModeSub name="UART_Printf" value="USART1"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Delay_Mode" value="Interrupt"/>
+        </Parameters>
+    </SYSTEM>
+    <TMR2>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="28799"/>
+            <ParametersSub name="Period" value="9999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR2>
+    <TMR3>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="28799"/>
+            <ParametersSub name="Period" value="9999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR3>
+    <TMR4>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="287"/>
+            <ParametersSub name="Period" value="999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR4>
+    <TMR6>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="287"/>
+            <ParametersSub name="Period" value="999"/>
+        </Parameters>
+    </TMR6>
+    <TMR7>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="287"/>
+            <ParametersSub name="Period" value="999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR7>
+    <TMR8>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="28799"/>
+            <ParametersSub name="Period" value="49999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR8>
+    <USART1>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous_TransmitOnly"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="VirtualMode" value="VM_ASYNC_T"/>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+    </USART1>
+    <USART2>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_IDLE" value="TRUE"/>
+        </Interrupts>
+    </USART2>
+    <USART3>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_IDLE" value="TRUE"/>
+        </Interrupts>
+    </USART3>
+    <UART4>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_IDLE" value="TRUE"/>
+        </Interrupts>
+    </UART4>
+    <UART5>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_IDLE" value="TRUE"/>
+        </Interrupts>
+    </UART5>
+    <USART6>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_IDLE" value="TRUE"/>
+        </Interrupts>
+    </USART6>
+    <UART7>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_IDLE" value="TRUE"/>
+        </Interrupts>
+    </UART7>
+    <UART8>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_IDLE" value="TRUE"/>
+        </Interrupts>
+    </UART8>
+    <USB_OTGFS1>
+        <Mode>
+            <ModeSub name="Mode" value="Host_Only"/>
+        </Mode>
+    </USB_OTGFS1>
+    <USB_OTGFS2>
+        <Mode>
+            <ModeSub name="Mode" value="Device_Only"/>
+        </Mode>
+    </USB_OTGFS2>
+    <WDT>
+        <Mode>
+            <ModeSub name="WDT_State" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Prescaler" value="WDT_CLK_DIV_64"/>
+        </Parameters>
+    </WDT>
+    <CMSIS_DSP>
+        <Mode>
+            <ModeSub name="CMSIS_DSP_State" value="TRUE"/>
+        </Mode>
+    </CMSIS_DSP>
+    <FREERTOS>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="MCU_SRAM_SIZE" value="393216"/>
+            <ParametersSub name="configCPU_CLOCK_HZ" value="288000000"/>
+            <ParametersSub name="configUSE_RECURSIVE_MUTEXES" value="1"/>
+            <ParametersSub name="TOTAL_HEAP_SIZE" value="102400"/>
+            <ParametersSub name="configUSE_TIMERS" value="0"/>
+            <ParametersSub name="INCLUDE_xTimerPendFunctionCall" value="0"/>
+        </Parameters>
+        <Tasks>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task01"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task01_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task02"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task02_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task03"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task03_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task04"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task04_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task05"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task05_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task06"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task06_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task07"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task07_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="TaskName" value="my_task08"/>
+                <ParametersSub name="TaskPriority" value="0"/>
+                <ParametersSub name="TaskStackSize" value="128"/>
+                <ParametersSub name="TaskEntryFunction" value="my_task08_func"/>
+                <ParametersSub name="TaskCodeGenerationOption" value="Default"/>
+                <ParametersSub name="TaskParameters" value="NULL"/>
+                <ParametersSub name="TaskAllocation" value="Dynamic"/>
+                <ParametersSub name="TaskStackBuffer" value="NULL"/>
+                <ParametersSub name="TaskBuffer" value="NULL"/>
+            </ParametersGroup>
+        </Tasks>
+        <Queues>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue01"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue02"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue03"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue04"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue05"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue06"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue07"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue08"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="QueueName" value="my_queue09"/>
+                <ParametersSub name="QueueSize" value="16"/>
+                <ParametersSub name="QueueItemSize" value="uint16_t"/>
+                <ParametersSub name="QueueAllocation" value="Dynamic"/>
+                <ParametersSub name="QueueBufferName" value="NULL"/>
+                <ParametersSub name="QueueBufferSize" value="n/a"/>
+                <ParametersSub name="QueueBuffer" value="NULL"/>
+            </ParametersGroup>
+        </Queues>
+        <Events>
+            <ParametersGroup>
+                <ParametersSub name="EventName" value="my_event01"/>
+                <ParametersSub name="EventAllocation" value="Dynamic"/>
+                <ParametersSub name="EventBuffer" value="NULL"/>
+            </ParametersGroup>
+        </Events>
+        <Mutexes>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex01"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex02"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex03"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex04"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex05"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex06"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex07"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="MutexName" value="my_mutex08"/>
+                <ParametersSub name="MutexAllocation" value="Dynamic"/>
+                <ParametersSub name="MutexBuffer" value="NULL"/>
+            </ParametersGroup>
+        </Mutexes>
+        <BinarySemaphores>
+            <ParametersGroup>
+                <ParametersSub name="BinarySemaphoreName" value="my_binary_sem01"/>
+                <ParametersSub name="BinarySemaphoreAllocation" value="Dynamic"/>
+                <ParametersSub name="BinarySemaphoreBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="BinarySemaphoreName" value="my_binary_sem02"/>
+                <ParametersSub name="BinarySemaphoreAllocation" value="Dynamic"/>
+                <ParametersSub name="BinarySemaphoreBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="BinarySemaphoreName" value="my_binary_sem03"/>
+                <ParametersSub name="BinarySemaphoreAllocation" value="Dynamic"/>
+                <ParametersSub name="BinarySemaphoreBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="BinarySemaphoreName" value="my_binary_sem04"/>
+                <ParametersSub name="BinarySemaphoreAllocation" value="Dynamic"/>
+                <ParametersSub name="BinarySemaphoreBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="BinarySemaphoreName" value="my_binary_sem05"/>
+                <ParametersSub name="BinarySemaphoreAllocation" value="Dynamic"/>
+                <ParametersSub name="BinarySemaphoreBuffer" value="NULL"/>
+            </ParametersGroup>
+            <ParametersGroup>
+                <ParametersSub name="BinarySemaphoreName" value="my_binary_sem06"/>
+                <ParametersSub name="BinarySemaphoreAllocation" value="Dynamic"/>
+                <ParametersSub name="BinarySemaphoreBuffer" value="NULL"/>
+            </ParametersGroup>
+        </BinarySemaphores>
+    </FREERTOS>
+    <USB_DEVICE>
+        <Mode>
+            <ModeSub name="OTGFS2_Device" value="CDC"/>
+        </Mode>
+    </USB_DEVICE>
+    <USB_HOST>
+        <Mode>
+            <ModeSub name="OTGFS1_Host" value="HID"/>
+        </Mode>
+    </USB_HOST>
+    <DMA>
+        <ADC1>
+            <ParametersSub name="Instance" value="DMA2_Channel1"/>
+            <ParametersSub name="DMANum" value="DMA2"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </ADC1>
+        <ADC2>
+            <ParametersSub name="Instance" value="DMA2_Channel2"/>
+            <ParametersSub name="DMANum" value="DMA2"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </ADC2>
+        <USART2_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel1"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </USART2_RX>
+        <USART3_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel2"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </USART3_RX>
+        <UART4_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel3"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </UART4_RX>
+        <UART5_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel4"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </UART5_RX>
+        <USART6_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel5"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </USART6_RX>
+        <UART7_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel6"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </UART7_RX>
+        <UART8_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel7"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+        </UART8_RX>
+    </DMA>
+    <NVIC>
+        <PendSV_Handler>1;15;0;1;0</PendSV_Handler>
+        <SysTick_Handler>1;15;0;1;0</SysTick_Handler>
+        <TAMP_STAMP_IRQHandler>0;5;0;1;0</TAMP_STAMP_IRQHandler>
+        <ERTC_WKUP_IRQHandler>0;5;0;1;0</ERTC_WKUP_IRQHandler>
+        <FLASH_IRQHandler>0;5;0;1;0</FLASH_IRQHandler>
+        <CRM_IRQHandler>0;5;0;1;0</CRM_IRQHandler>
+        <EXINT4_IRQHandler>0;5;0;1;0</EXINT4_IRQHandler>
+        <ADC1_2_3_IRQHandler>0;5;0;1;0</ADC1_2_3_IRQHandler>
+        <CAN1_TX_IRQHandler>0;5;0;1;0</CAN1_TX_IRQHandler>
+        <CAN1_RX0_IRQHandler>0;5;0;1;0</CAN1_RX0_IRQHandler>
+        <CAN1_RX1_IRQHandler>0;5;0;1;0</CAN1_RX1_IRQHandler>
+        <CAN1_SE_IRQHandler>0;5;0;1;0</CAN1_SE_IRQHandler>
+        <EXINT9_5_IRQHandler>0;5;0;1;0</EXINT9_5_IRQHandler>
+        <TMR2_GLOBAL_IRQHandler>1;5;0;1;0</TMR2_GLOBAL_IRQHandler>
+        <TMR3_GLOBAL_IRQHandler>1;5;0;1;0</TMR3_GLOBAL_IRQHandler>
+        <TMR4_GLOBAL_IRQHandler>1;5;0;1;0</TMR4_GLOBAL_IRQHandler>
+        <USART1_IRQHandler>0;5;0;1;0</USART1_IRQHandler>
+        <USART2_IRQHandler>1;5;0;1;0</USART2_IRQHandler>
+        <USART3_IRQHandler>1;5;0;1;0</USART3_IRQHandler>
+        <ERTCAlarm_IRQHandler>0;5;0;1;0</ERTCAlarm_IRQHandler>
+        <OTGFS1_WKUP_IRQHandler>0;5;0;1;0</OTGFS1_WKUP_IRQHandler>
+        <TMR8_BRK_TMR12_IRQHandler>0;5;0;1;0</TMR8_BRK_TMR12_IRQHandler>
+        <TMR8_OVF_TMR13_IRQHandler>1;5;0;1;0</TMR8_OVF_TMR13_IRQHandler>
+        <TMR8_TRG_HALL_TMR14_IRQHandler>0;5;0;1;0</TMR8_TRG_HALL_TMR14_IRQHandler>
+        <TMR8_CH_IRQHandler>0;5;0;1;0</TMR8_CH_IRQHandler>
+        <UART4_IRQHandler>1;5;0;1;0</UART4_IRQHandler>
+        <UART5_IRQHandler>1;5;0;1;0</UART5_IRQHandler>
+        <TMR6_DAC_GLOBAL_IRQHandler>1;5;0;1;0</TMR6_DAC_GLOBAL_IRQHandler>
+        <TMR7_GLOBAL_IRQHandler>1;5;0;1;0</TMR7_GLOBAL_IRQHandler>
+        <DMA1_Channel1_IRQHandler>0;5;0;1;0</DMA1_Channel1_IRQHandler>
+        <DMA1_Channel2_IRQHandler>0;5;0;1;0</DMA1_Channel2_IRQHandler>
+        <DMA1_Channel3_IRQHandler>0;5;0;1;0</DMA1_Channel3_IRQHandler>
+        <DMA1_Channel4_IRQHandler>0;5;0;1;0</DMA1_Channel4_IRQHandler>
+        <DMA1_Channel5_IRQHandler>0;5;0;1;0</DMA1_Channel5_IRQHandler>
+        <OTGFS1_IRQHandler>1;5;0;1;0</OTGFS1_IRQHandler>
+        <DMA1_Channel6_IRQHandler>0;5;0;1;0</DMA1_Channel6_IRQHandler>
+        <DMA1_Channel7_IRQHandler>0;5;0;1;0</DMA1_Channel7_IRQHandler>
+        <USART6_IRQHandler>1;5;0;1;0</USART6_IRQHandler>
+        <OTGFS2_WKUP_IRQHandler>0;5;0;1;0</OTGFS2_WKUP_IRQHandler>
+        <OTGFS2_IRQHandler>1;5;0;1;0</OTGFS2_IRQHandler>
+        <FPU_IRQHandler>0;5;0;1;0</FPU_IRQHandler>
+        <UART7_IRQHandler>1;5;0;1;0</UART7_IRQHandler>
+        <UART8_IRQHandler>1;5;0;1;0</UART8_IRQHandler>
+        <QSPI2_IRQHandler>0;5;0;1;0</QSPI2_IRQHandler>
+        <DMAMUX_IRQHandler>0;5;0;1;0</DMAMUX_IRQHandler>
+        <ACC_IRQHandler>0;5;0;1;0</ACC_IRQHandler>
+        <DMA2_Channel1_IRQHandler>0;5;0;1;0</DMA2_Channel1_IRQHandler>
+        <DMA2_Channel2_IRQHandler>0;5;0;1;0</DMA2_Channel2_IRQHandler>
+    </NVIC>
+    <GPIO>
+        <Signal SignalName="GPIO_Input" PinName="PE11">
+            <Parameters name="Label" value="IN_SW1"/>
+        </Signal>
+        <Signal SignalName="GPIO_Input" PinName="PE12">
+            <Parameters name="Label" value="IN_SW2"/>
+        </Signal>
+        <Signal SignalName="GPIO_Input" PinName="PE13">
+            <Parameters name="Label" value="IN_SW3"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PA15">
+            <Parameters name="Label" value="CH"/>
+        </Signal>
+    </GPIO>
+    <ClockConfiguration>
+        <rtcsel>1</rtcsel>
+        <rtcdiv>2</rtcdiv>
+        <hext>8.000000</hext>
+        <pllrcs>0</pllrcs>
+        <pllms>1</pllms>
+        <pllns>144</pllns>
+        <pllfr>4</pllfr>
+        <sclkselect>1</sclkselect>
+        <ahbdiv>1</ahbdiv>
+        <apb1div>2</apb1div>
+        <apb2div>2</apb2div>
+        <usbdiv>6.0</usbdiv>
+        <hicktousb>1</hicktousb>
+        <hicktosclk>0</hicktosclk>
+        <clkout1>0</clkout1>
+        <clkout1div1>1</clkout1div1>
+        <clkout1div2>1</clkout1div2>
+        <clkout2>0</clkout2>
+        <clkout2div1>1</clkout2div1>
+        <clkout2div2>1</clkout2div2>
+        <systicsel>1</systicsel>
+    </ClockConfiguration>
+    <PINInfo>
+        <PinSub pinname="PE2" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE3" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE4" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE5" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE6" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PC14/LEXT_IN" signalname="CRM_LEXT_IN" signaltype="2"/>
+        <PinSub pinname="PC15/LEXT_OUT" signalname="CRM_LEXT_OUT" signaltype="2"/>
+        <PinSub pinname="PH0/HEXT_IN" signalname="CRM_HEXT_IN" signaltype="2"/>
+        <PinSub pinname="PH1/HEXT_OUT" signalname="CRM_HEXT_OUT" signaltype="2"/>
+        <PinSub pinname="PC0" signalname="ADC1_IN10" signaltype="2"/>
+        <PinSub pinname="PC1" signalname="ADC1_IN11" signaltype="2"/>
+        <PinSub pinname="PC2" signalname="ADC2_IN12" signaltype="3"/>
+        <PinSub pinname="PA0" signalname="ADC1_IN0" signaltype="2"/>
+        <PinSub pinname="PA1" signalname="ADC2_IN1" signaltype="3"/>
+        <PinSub pinname="PA2" signalname="ADC1_IN2" signaltype="2"/>
+        <PinSub pinname="PA3" signalname="ADC1_IN3" signaltype="2"/>
+        <PinSub pinname="PA4" signalname="ADC1_IN4" signaltype="2"/>
+        <PinSub pinname="PA5" signalname="ADC1_IN5" signaltype="2"/>
+        <PinSub pinname="PA6" signalname="ADC1_IN6" signaltype="2"/>
+        <PinSub pinname="PA7" signalname="ADC1_IN7" signaltype="2"/>
+        <PinSub pinname="PC4" signalname="ADC1_IN14" signaltype="2"/>
+        <PinSub pinname="PC5" signalname="ADC1_IN15" signaltype="3"/>
+        <PinSub pinname="PB0" signalname="ADC1_IN8" signaltype="2"/>
+        <PinSub pinname="PB1" signalname="QSPI2_SCK" signaltype="2"/>
+        <PinSub pinname="PE7" signalname="QSPI2_IO0" signaltype="3"/>
+        <PinSub pinname="PE8" signalname="QSPI2_IO1" signaltype="2"/>
+        <PinSub pinname="PE9" signalname="QSPI2_IO2" signaltype="2"/>
+        <PinSub pinname="PE10" signalname="QSPI2_IO3" signaltype="2"/>
+        <PinSub pinname="PE11" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE12" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE13" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE14" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PE15" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB10" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB11" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB12" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB13" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB14" signalname="USB_OTGFS2_D-" signaltype="2"/>
+        <PinSub pinname="PB15" signalname="USB_OTGFS2_D+" signaltype="2"/>
+        <PinSub pinname="PD8" signalname="USART3_TX" signaltype="2"/>
+        <PinSub pinname="PD9" signalname="USART3_RX" signaltype="2"/>
+        <PinSub pinname="PD10" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PD11" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PD12" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PD13" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PD14" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PD15" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PC6" signalname="USART6_TX" signaltype="2"/>
+        <PinSub pinname="PC7" signalname="USART6_RX" signaltype="2"/>
+        <PinSub pinname="PC8" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PC9" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PA8" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PA9" signalname="USART1_TX" signaltype="2"/>
+        <PinSub pinname="PA10" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PA11" signalname="USB_OTGFS1_D-" signaltype="2"/>
+        <PinSub pinname="PA12" signalname="USB_OTGFS1_D+" signaltype="2"/>
+        <PinSub pinname="PA13" signalname="DEBUG_JTMS_SWDIO" signaltype="2"/>
+        <PinSub pinname="PA14" signalname="DEBUG_JTCK_SWCLK" signaltype="2"/>
+        <PinSub pinname="PA15" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PC10" signalname="UART4_TX" signaltype="2"/>
+        <PinSub pinname="PC11" signalname="UART4_RX" signaltype="2"/>
+        <PinSub pinname="PC12" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PD0" signalname="CAN1_RX" signaltype="2"/>
+        <PinSub pinname="PD1" signalname="CAN1_TX" signaltype="2"/>
+        <PinSub pinname="PD2" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PD3" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PD4" signalname="EXINT4" signaltype="3"/>
+        <PinSub pinname="PD5" signalname="USART2_TX" signaltype="2"/>
+        <PinSub pinname="PD6" signalname="USART2_RX" signaltype="2"/>
+        <PinSub pinname="PD7" signalname="EXINT7" signaltype="3"/>
+        <PinSub pinname="PB3" signalname="UART7_RX" signaltype="2"/>
+        <PinSub pinname="PB4" signalname="UART7_TX" signaltype="2"/>
+        <PinSub pinname="PB5" signalname="UART5_RX" signaltype="2"/>
+        <PinSub pinname="PB6" signalname="UART5_TX" signaltype="2"/>
+        <PinSub pinname="PB7" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PB8" signalname="QSPI2_CS" signaltype="2"/>
+        <PinSub pinname="PB9" signalname="GPIO_Input" signaltype="3"/>
+        <PinSub pinname="PE0" signalname="UART8_RX" signaltype="2"/>
+        <PinSub pinname="PE1" signalname="UART8_TX" signaltype="2"/>
+    </PINInfo>
+    <ProjectInfomation>
+        <ProjectName>samp</ProjectName>
+        <ProjectLocation>D:/MCU_program3</ProjectLocation>
+        <ToolchainIDE>MDK_V5</ToolchainIDE>
+        <ARMCompiler>0</ARMCompiler>
+        <KeepUserCode>true</KeepUserCode>
+        <NotUsedPinAnalog>false</NotUsedPinAnalog>
+        <CodeSplitIP>false</CodeSplitIP>
+        <AddNecessaryFileFlag>true</AddNecessaryFileFlag>
+        <MinHeapSize>0x800</MinHeapSize>
+        <MinStackSize>0x1000</MinStackSize>
+        <UseFirmware>true</UseFirmware>
+        <PackageVersion>V2.2.3</PackageVersion>
+    </ProjectInfomation>
+</Root>

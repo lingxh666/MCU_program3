@@ -1,0 +1,30 @@
+# dot files
+/.vscode/launch.json
+/.settings
+/.eide/log
+/.eide.usr.ctx.json
+/.serena/
+/.claude/
+
+# project out
+/build
+/bin
+/obj
+/out
+/listings
+/objects
+
+# eide template
+*.ept
+*.eide-template
+
+# build outputs
+/sampling.bin
+/build_log.txt
+
+# per-user IDE files
+*.uvoptx
+*.uvguix.*
+
+# placeholder device file
+/nul

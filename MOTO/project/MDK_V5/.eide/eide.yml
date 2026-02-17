@@ -1,0 +1,172 @@
+version: "4.1"
+name: MOTO
+type: ARM
+deviceName: null
+packDir: null
+srcDirs: []
+virtualFolder:
+  name: <virtual_root>
+  files: []
+  folders:
+    - name: user
+      files:
+        - path: ../src/at32f421_int.c
+        - path: ../src/at32f421_wk_config.c
+        - path: ../src/main.c
+        - path: ../src/wk_system.c
+      folders: []
+    - name: firmware
+      files:
+        - path: ../../libraries/drivers/src/at32f421_adc.c
+        - path: ../../libraries/drivers/src/at32f421_crc.c
+        - path: ../../libraries/drivers/src/at32f421_crm.c
+        - path: ../../libraries/drivers/src/at32f421_debug.c
+        - path: ../../libraries/drivers/src/at32f421_dma.c
+        - path: ../../libraries/drivers/src/at32f421_flash.c
+        - path: ../../libraries/drivers/src/at32f421_gpio.c
+        - path: ../../libraries/drivers/src/at32f421_misc.c
+        - path: ../../libraries/drivers/src/at32f421_pwc.c
+        - path: ../../libraries/drivers/src/at32f421_scfg.c
+        - path: ../../libraries/drivers/src/at32f421_tmr.c
+        - path: ../../libraries/drivers/src/at32f421_usart.c
+        - path: ../../libraries/drivers/src/at32f421_wdt.c
+      folders: []
+    - name: cmsis
+      files:
+        - path: ../../libraries/cmsis/cm4/device_support/system_at32f421.c
+        - path: startup_at32f421.s
+      folders: []
+dependenceList: []
+outDir: build
+miscInfo:
+  uid: 2966a43d3987d5377117984ec59bc520
+targets:
+  MOTO:
+    cppPreprocessAttrs:
+      defineList:
+        - AT32F421F8P7
+        - USE_STDPERIPH_DRIVER
+        - AT_START_F421_V1
+      incList:
+        - ../../libraries/drivers/inc
+        - ../../libraries/cmsis/cm4/core_support
+        - ../../libraries/cmsis/cm4/device_support
+        - ../inc
+        - .cmsis/include
+        - RTE/_MOTO
+      libList: []
+    excludeList: []
+    toolchain: AC5
+    toolchainConfigMap:
+      AC5:
+        archExtensions: ""
+        cpuType: Cortex-M4
+        floatingPointHardware: none
+        options:
+          version: 4
+          afterBuildTasks: []
+          asm-compiler: {}
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            CXX_FLAGS: --no-multibyte-chars
+            C_FLAGS: --no-multibyte-chars
+            c99-mode: true
+            one-elf-section-per-function: true
+            optimization: level-0
+            warnings: all-warnings
+          global:
+            output-debug-info: enable
+            use-microLIB: false
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            output-format: elf
+            ro-base: "0x08000000"
+            rw-base: "0x20000000"
+            xo-base: ""
+        scatterFilePath: ""
+        storageLayout:
+          RAM:
+            - id: 1
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 3
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 1
+              isChecked: true
+              mem:
+                size: "0x4000"
+                startAddr: "0x20000000"
+              noInit: false
+              tag: IRAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: IRAM
+          ROM:
+            - id: 1
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 3
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 1
+              isChecked: true
+              isStartup: true
+              mem:
+                size: "0x10000"
+                startAddr: "0x8000000"
+              tag: IROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: IROM
+        useCustomScatterFile: false
+    uploadConfigMap:
+      JLink:
+        baseAddr: ""
+        bin: ""
+        cpuInfo:
+          cpuName: "null"
+          vendor: "null"
+        otherCmds: ""
+        proType: 1
+        speed: 8000
+    uploader: JLink

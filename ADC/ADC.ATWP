@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Root>
+    <WorkBenchVersion>
+        <Version>V1.2.02</Version>
+    </WorkBenchVersion>
+    <MCUInfo>
+        <MCUSerials>AT32F421</MCUSerials>
+        <MCUName>AT32F421F8P7</MCUName>
+        <MCUPackage>TSSOP20</MCUPackage>
+    </MCUInfo>
+    <ADC1>
+        <Mode>
+            <ModeSub name="IN0" value="TRUE"/>
+            <ModeSub name="IN1" value="TRUE"/>
+            <ModeSub name="IN3" value="TRUE"/>
+            <ModeSub name="IN4" value="TRUE"/>
+            <ModeSub name="IN5" value="TRUE"/>
+            <ModeSub name="IN6" value="TRUE"/>
+            <ModeSub name="IN9" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="RepeatMode" value="TRUE"/>
+            <ParametersSub name="NbrOfOrdinarySequence" value="7"/>
+            <ParametersSub name="Channel_OrdinarySequence_1" value="ADC_CHANNEL_0"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_1" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_1" value="0.238"/>
+            <ParametersSub name="Channel_OrdinarySequence_2" value="ADC_CHANNEL_1"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_2" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_2" value="0.238"/>
+            <ParametersSub name="Channel_OrdinarySequence_3" value="ADC_CHANNEL_3"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_3" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_3" value="0.238"/>
+            <ParametersSub name="Channel_OrdinarySequence_4" value="ADC_CHANNEL_4"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_4" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_4" value="0.238"/>
+            <ParametersSub name="Channel_OrdinarySequence_5" value="ADC_CHANNEL_5"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_5" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_5" value="0.238"/>
+            <ParametersSub name="Channel_OrdinarySequence_6" value="ADC_CHANNEL_6"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_6" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_6" value="0.238"/>
+            <ParametersSub name="Channel_OrdinarySequence_7" value="ADC_CHANNEL_9"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_7" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_7" value="0.238"/>
+        </Parameters>
+    </ADC1>
+    <DEBUG>
+        <Mode>
+            <ModeSub name="SWD" value="TRUE"/>
+        </Mode>
+    </DEBUG>
+    <SYSTEM>
+        <Mode>
+            <ModeSub name="Time_Base" value="TMR3"/>
+            <ModeSub name="UART_Printf" value="USART2"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Delay_Mode" value="Interrupt"/>
+        </Parameters>
+    </SYSTEM>
+    <TMR6>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="119"/>
+            <ParametersSub name="Period" value="999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR6>
+    <TMR16>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="11999"/>
+            <ParametersSub name="Period" value="9999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR16>
+    <USART1>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="BaudRate" value="9600"/>
+            <ParametersSub name="RealBaudRate" value="9600"/>
+        </Parameters>
+    </USART1>
+    <USART2>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous_TransmitOnly"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="VirtualMode" value="VM_ASYNC_T"/>
+            <ParametersSub name="RealBaudRate" value="115163"/>
+        </Parameters>
+    </USART2>
+    <WDT>
+        <Mode>
+            <ModeSub name="WDT_State" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Prescaler" value="WDT_CLK_DIV_64"/>
+        </Parameters>
+    </WDT>
+    <DMA>
+        <ADC1>
+            <ParametersSub name="Instance" value="DMA1_Channel1"/>
+            <ParametersSub name="Interrupt_FDT" value="ENABLE"/>
+            <ParametersSub name="Interrupt_HDT" value="ENABLE"/>
+        </ADC1>
+    </DMA>
+    <NVIC>
+        <SysTick_Handler>1;15;0;0;0</SysTick_Handler>
+        <FLASH_IRQHandler>0;0;0;0;0</FLASH_IRQHandler>
+        <CRM_IRQHandler>0;0;0;0;0</CRM_IRQHandler>
+        <DMA1_Channel1_IRQHandler>1;0;0;0;0</DMA1_Channel1_IRQHandler>
+        <ADC1_CMP_IRQHandler>0;0;0;0;0</ADC1_CMP_IRQHandler>
+        <TMR6_GLOBAL_IRQHandler>1;0;0;0;0</TMR6_GLOBAL_IRQHandler>
+        <TMR16_GLOBAL_IRQHandler>1;0;0;0;0</TMR16_GLOBAL_IRQHandler>
+        <USART1_IRQHandler>0;0;0;0;0</USART1_IRQHandler>
+        <USART2_IRQHandler>0;0;0;0;0</USART2_IRQHandler>
+    </NVIC>
+    <ClockConfiguration>
+        <lextbypass>0</lextbypass>
+        <rtcsel>0</rtcsel>
+        <hext>8.000000</hext>
+        <hextbypass>0</hextbypass>
+        <pllhextdiv>0</pllhextdiv>
+        <pllrcs>1</pllrcs>
+        <pllmode>0</pllmode>
+        <pllmult>30</pllmult>
+        <pllms>1</pllms>
+        <pllns>120</pllns>
+        <pllfr>8</pllfr>
+        <sclkselect>1</sclkselect>
+        <ahbdiv>1</ahbdiv>
+        <apb1div>1</apb1div>
+        <apb2div>1</apb2div>
+        <hicktosclk>0</hicktosclk>
+        <clkout>0</clkout>
+        <clkoutdiv>1</clkoutdiv>
+        <clkoutpinselect>0</clkoutpinselect>
+        <adcswitch>1</adcswitch>
+        <adcdiv>6</adcdiv>
+        <systicsel>8</systicsel>
+    </ClockConfiguration>
+    <PINInfo>
+        <PinSub pinname="PA0" signalname="ADC1_IN0" signaltype="2"/>
+        <PinSub pinname="PA1" signalname="ADC1_IN1" signaltype="2"/>
+        <PinSub pinname="PA2" signalname="USART2_TX" signaltype="3"/>
+        <PinSub pinname="PA3" signalname="ADC1_IN3" signaltype="2"/>
+        <PinSub pinname="PA4" signalname="ADC1_IN4" signaltype="2"/>
+        <PinSub pinname="PA5" signalname="ADC1_IN5" signaltype="2"/>
+        <PinSub pinname="PA6" signalname="ADC1_IN6" signaltype="2"/>
+        <PinSub pinname="PB1" signalname="ADC1_IN9" signaltype="2"/>
+        <PinSub pinname="PA9 [PA11]" signalname="USART1_TX" signaltype="3"/>
+        <PinSub pinname="PA10 [PA12]" signalname="USART1_RX" signaltype="2"/>
+        <PinSub pinname="PA13" signalname="DEBUG_SWDIO" signaltype="2"/>
+        <PinSub pinname="PA14" signalname="DEBUG_SWCLK" signaltype="2"/>
+    </PINInfo>
+    <ProjectInfomation>
+        <ProjectName>ADC</ProjectName>
+        <ProjectLocation>D:/MCU_program3</ProjectLocation>
+        <ToolchainIDE>MDK_V5</ToolchainIDE>
+        <ARMCompiler>0</ARMCompiler>
+        <KeepUserCode>true</KeepUserCode>
+        <NotUsedPinAnalog>false</NotUsedPinAnalog>
+        <CodeSplitIP>false</CodeSplitIP>
+        <AddNecessaryFileFlag>true</AddNecessaryFileFlag>
+        <MinHeapSize>0x200</MinHeapSize>
+        <MinStackSize>0x400</MinStackSize>
+        <UseFirmware>true</UseFirmware>
+        <PackageVersion>V2.1.9</PackageVersion>
+    </ProjectInfomation>
+</Root>

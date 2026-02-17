@@ -1,0 +1,260 @@
+[
+  {
+    "sid": "/概要",
+    "title": "概要",
+    "level": 1,
+    "children": []
+  },
+  {
+    "sid": "/通信连接规格",
+    "title": "通信连接规格",
+    "level": 1,
+    "children": []
+  },
+  {
+    "sid": "/通信规格",
+    "title": "通信规格",
+    "level": 1,
+    "children": [
+      {
+        "sid": "/功能代码格式",
+        "title": "功能代码格式",
+        "level": 2,
+        "parent": "/通信规格",
+        "children": []
+      }
+    ]
+  },
+  {
+    "sid": "/数采控制流程",
+    "title": "数采控制流程",
+    "level": 1,
+    "children": [
+      {
+        "sid": "/采样器功能简介",
+        "title": "采样器功能简介",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/环保专用-ab-桶多模式留样功能",
+        "title": "环保专用 AB 桶多模式留样功能",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/送样过程",
+        "title": "送样过程：",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/留样过程",
+        "title": "留样过程：",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/瞬时留样功能",
+        "title": "瞬时留样功能",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/读取蓄水桶水样是否准备好状态",
+        "title": "读取蓄水桶水样是否准备好状态",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/现场水质仪表测量值设置",
+        "title": "现场水质仪表测量值设置",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/触发一次-ab-桶采样",
+        "title": "触发一次 AB 桶采样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/触发一次-ab-桶送样",
+        "title": "触发一次 AB 桶送样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/触发一次-ab-桶留样",
+        "title": "触发一次 AB 桶留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/仪器自主查找瓶号自主查找桶号留样",
+        "title": "仪器自主查找瓶号自主查找桶号留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/仪器自主查找瓶号指定-a-桶留样",
+        "title": "仪器自主查找瓶号指定 A 桶留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/仪器自主查找瓶号指定-b-桶留样",
+        "title": "仪器自主查找瓶号指定 B 桶留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/指定起始瓶号自主查找桶号留样",
+        "title": "指定起始瓶号自主查找桶号留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/指定起始瓶号指定-a-桶留样",
+        "title": "指定起始瓶号指定 A 桶留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/指定起始瓶号指定-b-桶留样",
+        "title": "指定起始瓶号指定 B 桶留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/触发一次瞬时留样",
+        "title": "触发一次瞬时留样",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/仪器自主查找瓶号",
+        "title": "仪器自主查找瓶号",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/指定瓶号",
+        "title": "指定瓶号",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/触发一次采样瓶排空",
+        "title": "触发一次采样瓶排空",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/读取仪器状态",
+        "title": "读取仪器状态",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/读取超标留样信息",
+        "title": "读取超标留样信息",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/读取普通留样信息",
+        "title": "读取普通留样信息",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/读取瞬时留样信息",
+        "title": "读取瞬时留样信息",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/系统参数设置",
+        "title": "系统参数设置",
+        "level": 4,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/采样模式及相关参数设置",
+        "title": "采样模式及相关参数设置",
+        "level": 3,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/留样模式及相关参数设置",
+        "title": "留样模式及相关参数设置",
+        "level": 3,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/系统时间设置",
+        "title": "系统时间设置",
+        "level": 3,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/读取系统时间",
+        "title": "读取系统时间",
+        "level": 3,
+        "parent": "/数采控制流程",
+        "children": []
+      },
+      {
+        "sid": "/读取仪器出厂编号",
+        "title": "读取仪器出厂编号",
+        "level": 3,
+        "parent": "/数采控制流程",
+        "children": [
+          {
+            "sid": "/读取门禁动态密码",
+            "title": "读取门禁动态密码",
+            "level": 4,
+            "parent": "/读取仪器出厂编号",
+            "children": []
+          },
+          {
+            "sid": "/仪器留样情况下",
+            "title": "仪器留样情况下：",
+            "level": 4,
+            "parent": "/读取仪器出厂编号",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+]

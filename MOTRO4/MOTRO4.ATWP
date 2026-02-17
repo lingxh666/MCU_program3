@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Root>
+    <WorkBenchVersion>
+        <Version>V1.2.02</Version>
+    </WorkBenchVersion>
+    <MCUInfo>
+        <MCUSerials>AT32F422</MCUSerials>
+        <MCUName>AT32F422CBT7</MCUName>
+        <MCUPackage>LQFP48</MCUPackage>
+    </MCUInfo>
+    <ADC1>
+        <Mode>
+            <ModeSub name="IN3" value="TRUE"/>
+            <ModeSub name="IN4" value="TRUE"/>
+            <ModeSub name="IN5" value="TRUE"/>
+            <ModeSub name="IN6" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="RepeatMode" value="TRUE"/>
+            <ParametersSub name="NbrOfOrdinarySequence" value="4"/>
+            <ParametersSub name="Channel_OrdinarySequence_1" value="ADC_CHANNEL_3"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_1" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_1" value="0.317"/>
+            <ParametersSub name="Channel_OrdinarySequence_2" value="ADC_CHANNEL_4"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_2" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_2" value="0.317"/>
+            <ParametersSub name="Channel_OrdinarySequence_3" value="ADC_CHANNEL_5"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_3" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_3" value="0.317"/>
+            <ParametersSub name="Channel_OrdinarySequence_4" value="ADC_CHANNEL_6"/>
+            <ParametersSub name="SamplingTime_OrdinarySequence_4" value="ADC_SAMPLETIME_71_5"/>
+            <ParametersSub name="SamplingRate_OrdinarySequence_4" value="0.317"/>
+        </Parameters>
+    </ADC1>
+    <CAN1>
+        <Mode>
+            <ModeSub name="CAN_Activate" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="NominalBaudRate" value="500"/>
+            <ParametersSub name="Nominal_Sample_Point" value="75.0"/>
+            <ParametersSub name="Nominal_BTS1" value="240"/>
+            <ParametersSub name="Nominal_BTS2" value="80"/>
+            <ParametersSub name="Nominal_RSAW" value="80"/>
+        </Parameters>
+    </CAN1>
+    <CRM>
+        <Mode>
+            <ModeSub name="HEXT" value="HEXT-External-Oscillator"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="HEXT" value="HEXT_CRYSTAL"/>
+        </Parameters>
+    </CRM>
+    <DEBUG>
+        <Mode>
+            <ModeSub name="SWD" value="TRUE"/>
+            <ModeSub name="SWO" value="FALSE"/>
+        </Mode>
+    </DEBUG>
+    <SYSTEM>
+        <Mode>
+            <ModeSub name="Time_Base" value="TMR16"/>
+            <ModeSub name="UART_Printf" value="USART1"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Delay_Mode" value="Interrupt"/>
+        </Parameters>
+    </SYSTEM>
+    <TMR3>
+        <Mode>
+            <ModeSub name="Channel1 mode" value="Output_CH1"/>
+            <ModeSub name="Channel2 mode" value="Output_CH2"/>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="99"/>
+            <ParametersSub name="Period" value="159"/>
+            <ParametersSub name="OCMode_1" value="TMR_OUTPUT_CONTROL_PWM_MODE_A"/>
+            <ParametersSub name="OC1Buffer" value="TRUE"/>
+            <ParametersSub name="OCMode_2" value="TMR_OUTPUT_CONTROL_PWM_MODE_A"/>
+        </Parameters>
+    </TMR3>
+    <TMR4>
+        <Mode>
+            <ModeSub name="Channel2 mode" value="Output_CH2"/>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="99"/>
+            <ParametersSub name="Period" value="159"/>
+            <ParametersSub name="OCMode_2" value="TMR_OUTPUT_CONTROL_PWM_MODE_A"/>
+            <ParametersSub name="OC2Buffer" value="TRUE"/>
+        </Parameters>
+    </TMR4>
+    <TMR6>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="159"/>
+            <ParametersSub name="Period" value="999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR6>
+    <TMR15>
+        <Mode>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="15999"/>
+            <ParametersSub name="Period" value="9999"/>
+        </Parameters>
+        <Interrupts>
+            <InterruptsSub name="Interrupt_OVFIF" value="TRUE"/>
+        </Interrupts>
+    </TMR15>
+    <TMR17>
+        <Mode>
+            <ModeSub name="Channel1 mode" value="Output_CH1"/>
+            <ModeSub name="Activated" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="DividerValue" value="99"/>
+            <ParametersSub name="Period" value="159"/>
+            <ParametersSub name="OCMode_1" value="TMR_OUTPUT_CONTROL_PWM_MODE_A"/>
+            <ParametersSub name="OC1Buffer" value="TRUE"/>
+        </Parameters>
+    </TMR17>
+    <USART1>
+        <Mode>
+            <ModeSub name="Mode" value="Asynchronous_TransmitOnly"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="VirtualMode" value="VM_ASYNC_T"/>
+            <ParametersSub name="RealBaudRate" value="115191"/>
+        </Parameters>
+    </USART1>
+    <WDT>
+        <Mode>
+            <ModeSub name="WDT_State" value="TRUE"/>
+        </Mode>
+        <Parameters>
+            <ParametersSub name="Prescaler" value="WDT_CLK_DIV_64"/>
+        </Parameters>
+    </WDT>
+    <DMA>
+        <ADC1>
+            <ParametersSub name="Instance" value="DMA1_Channel1"/>
+            <ParametersSub name="Interrupt_FDT" value="ENABLE"/>
+            <ParametersSub name="Interrupt_HDT" value="ENABLE"/>
+        </ADC1>
+    </DMA>
+    <NVIC>
+        <SysTick_Handler>1;15;0;0;0</SysTick_Handler>
+        <FLASH_IRQHandler>0;0;0;0;0</FLASH_IRQHandler>
+        <CRM_IRQHandler>0;0;0;0;0</CRM_IRQHandler>
+        <DMA1_Channel1_IRQHandler>1;0;0;0;0</DMA1_Channel1_IRQHandler>
+        <ADC1_CMP_IRQHandler>0;0;0;0;0</ADC1_CMP_IRQHandler>
+        <TMR3_GLOBAL_IRQHandler>0;0;0;0;0</TMR3_GLOBAL_IRQHandler>
+        <TMR6_GLOBAL_IRQHandler>1;0;0;0;0</TMR6_GLOBAL_IRQHandler>
+        <TMR4_GLOBAL_IRQHandler>0;0;0;0;0</TMR4_GLOBAL_IRQHandler>
+        <TMR15_GLOBAL_IRQHandler>1;0;0;0;0</TMR15_GLOBAL_IRQHandler>
+        <TMR17_GLOBAL_IRQHandler>0;0;0;0;0</TMR17_GLOBAL_IRQHandler>
+        <USART1_IRQHandler>0;0;0;0;0</USART1_IRQHandler>
+        <CAN1_TX_IRQHandler>0;0;0;0;0</CAN1_TX_IRQHandler>
+        <CAN1_RX_IRQHandler>1;0;0;0;0</CAN1_RX_IRQHandler>
+        <CAN1_STAT_IRQHandler>0;0;0;0;0</CAN1_STAT_IRQHandler>
+        <CAN1_ERR_IRQHandler>1;0;0;0;0</CAN1_ERR_IRQHandler>
+        <FPU_IRQHandler>0;0;0;0;0</FPU_IRQHandler>
+    </NVIC>
+    <GPIO>
+        <Signal SignalName="ADC1_IN3" PinName="PA3">
+            <Parameters name="Label" value="AD4"/>
+        </Signal>
+        <Signal SignalName="ADC1_IN4" PinName="PA4">
+            <Parameters name="Label" value="AD3"/>
+        </Signal>
+        <Signal SignalName="ADC1_IN5" PinName="PA5">
+            <Parameters name="Label" value="AD1"/>
+        </Signal>
+        <Signal SignalName="ADC1_IN6" PinName="PA6">
+            <Parameters name="Label" value="AD2"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PA7">
+            <Parameters name="Label" value="LED4"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PB0">
+            <Parameters name="Label" value="LED1"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PB1">
+            <Parameters name="Label" value="LED2"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PB2">
+            <Parameters name="Label" value="LED3"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PF6">
+            <Parameters name="Label" value="CW2"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PF7">
+            <Parameters name="Label" value="CW3"/>
+        </Signal>
+        <Signal SignalName="TMR3_CH1" PinName="PB4">
+            <Parameters name="Label" value="STEP2"/>
+        </Signal>
+        <Signal SignalName="TMR3_CH2" PinName="PB5">
+            <Parameters name="Label" value="STEP3"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PB6">
+            <Parameters name="Label" value="CW4"/>
+        </Signal>
+        <Signal SignalName="TMR4_CH2" PinName="PB7">
+            <Parameters name="Label" value="STEP4"/>
+        </Signal>
+        <Signal SignalName="GPIO_Output" PinName="PB8">
+            <Parameters name="Label" value="CW1"/>
+        </Signal>
+        <Signal SignalName="TMR17_CH1" PinName="PB9">
+            <Parameters name="Label" value="STEP1"/>
+        </Signal>
+    </GPIO>
+    <ClockConfiguration>
+        <lextbypass>0</lextbypass>
+        <rtcsel>0</rtcsel>
+        <hext>8.000000</hext>
+        <hextbypass>0</hextbypass>
+        <pllhextdiv>0</pllhextdiv>
+        <pllrcs>0</pllrcs>
+        <pllmode>0</pllmode>
+        <pllmult>20</pllmult>
+        <pllms>1</pllms>
+        <pllns>75</pllns>
+        <pllfr>4</pllfr>
+        <sclkselect>1</sclkselect>
+        <ahbdiv>1</ahbdiv>
+        <apb1div>1</apb1div>
+        <apb2div>1</apb2div>
+        <apb3div>2</apb3div>
+        <hicktosclk>0</hicktosclk>
+        <clkout>0</clkout>
+        <clkoutdiv>1</clkoutdiv>
+        <clkoutpinselect>0</clkoutpinselect>
+        <adcswitch>1</adcswitch>
+        <adcdiv>6</adcdiv>
+        <canclocksel>1</canclocksel>
+        <systicsel>8</systicsel>
+    </ClockConfiguration>
+    <PINInfo>
+        <PinSub pinname="PF0" signalname="CRM_HEXT_IN" signaltype="2"/>
+        <PinSub pinname="PF1" signalname="CRM_HEXT_OUT" signaltype="2"/>
+        <PinSub pinname="PA3" signalname="ADC1_IN3" signaltype="3"/>
+        <PinSub pinname="PA4" signalname="ADC1_IN4" signaltype="3"/>
+        <PinSub pinname="PA5" signalname="ADC1_IN5" signaltype="3"/>
+        <PinSub pinname="PA6" signalname="ADC1_IN6" signaltype="3"/>
+        <PinSub pinname="PA7" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB0" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB1" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB2" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PA9" signalname="USART1_TX" signaltype="3"/>
+        <PinSub pinname="PA11" signalname="CAN1_RX" signaltype="2"/>
+        <PinSub pinname="PA12" signalname="CAN1_TX" signaltype="2"/>
+        <PinSub pinname="PA13" signalname="DEBUG_SWDIO" signaltype="2"/>
+        <PinSub pinname="PF6" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PF7" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PA14" signalname="DEBUG_SWCLK" signaltype="2"/>
+        <PinSub pinname="PB4" signalname="TMR3_CH1" signaltype="3"/>
+        <PinSub pinname="PB5" signalname="TMR3_CH2" signaltype="3"/>
+        <PinSub pinname="PB6" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB7" signalname="TMR4_CH2" signaltype="3"/>
+        <PinSub pinname="PB8" signalname="GPIO_Output" signaltype="3"/>
+        <PinSub pinname="PB9" signalname="TMR17_CH1" signaltype="3"/>
+    </PINInfo>
+    <ProjectInfomation>
+        <ProjectName>MOTRO4</ProjectName>
+        <ProjectLocation>D:/MCU_program3</ProjectLocation>
+        <ToolchainIDE>MDK_V5</ToolchainIDE>
+        <ARMCompiler>0</ARMCompiler>
+        <KeepUserCode>true</KeepUserCode>
+        <NotUsedPinAnalog>false</NotUsedPinAnalog>
+        <CodeSplitIP>false</CodeSplitIP>
+        <AddNecessaryFileFlag>true</AddNecessaryFileFlag>
+        <MinHeapSize>0x200</MinHeapSize>
+        <MinStackSize>0x400</MinStackSize>
+        <UseFirmware>true</UseFirmware>
+        <PackageVersion>V2.0.1</PackageVersion>
+    </ProjectInfomation>
+</Root>

@@ -1,0 +1,41 @@
+﻿<mxfile host="app.diagrams.net" modified="2026-01-25T00:00:00.000Z" agent="Codex" version="20.8.3">
+  <diagram id="task-timing" name="Page-1">
+    <mxGraphModel dx="1362" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="Task03 调度/采样送样FSM&#10;100ms循环" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Task04 留样判定/执行&#10;事件驱动+1s轮询" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Task06 ADC采集/留样判定输入&#10;25ms循环" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Task07 485协议&#10;事件驱动" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="280" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Task08 门禁/Wiegand&#10;10ms循环" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Task10 屏幕命令/刷写&#10;2s刷写" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="440" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="Task02 MQTT/OTA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="400" y="40" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="Task01 看门狗/配置" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="400" y="120" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="20" value="送样完成通知" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="2" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="ADC数据/触发判定" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="4" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

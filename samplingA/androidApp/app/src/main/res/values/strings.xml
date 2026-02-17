@@ -1,0 +1,113 @@
+<resources>
+    <string name="app_name">Sampling</string>
+
+    <!-- Navigation -->
+    <string name="nav_bluetooth">蓝牙</string>
+    <string name="nav_nfc">NFC</string>
+    <string name="nav_mqtt">MQTT</string>
+    <string name="nav_database">数据库</string>
+
+    <!-- Bluetooth Screen -->
+    <string name="bluetooth_title">蓝牙固件升级</string>
+    <string name="btn_stop_scan">停止扫描</string>
+    <string name="btn_scan">扫描</string>
+    <string name="status_connecting">连接中...</string>
+    <string name="status_connected">已连接</string>
+    <string name="status_disconnected">未连接</string>
+    <string name="btn_disconnect">断开连接</string>
+    <string name="label_available_devices">可用设备:</string>
+    <string name="msg_scanning">扫描中...</string>
+    <string name="msg_no_devices">未发现设备</string>
+    <string name="device_unknown">未知设备</string>
+    <string name="title_ota">固件升级 (OTA)</string>
+    <string name="label_firmware_url">固件链接</string>
+    <string name="btn_start_ota">开始 OTA 升级</string>
+    <string name="label_logs">日志:</string>
+
+    <!-- NFC Screen -->
+    <string name="nfc_title">NFC 读取器</string>
+    <string name="nfc_instruction">请将 NFC 标签靠近设备背面</string>
+    <string name="nfc_disabled">NFC 未启用或不支持</string>
+    <string name="label_parsed_data">解析数据:</string>
+    <string name="msg_waiting_scan">等待扫描...</string>
+    <string name="label_raw_data">原始数据:</string>
+    <string name="btn_stop_read">停止读取</string>
+    <string name="btn_start_read">开始读取</string>
+    <string name="card_title_tag_info">标签信息</string>
+
+    <!-- MQTT Screen -->
+    <string name="mqtt_title">MQTT 控制</string>
+    <string name="status_connected_short">已连接</string>
+    <string name="status_disconnected_short">未连接</string>
+    <string name="btn_connect">连接</string>
+    <string name="btn_disconnect_short">断开</string>
+    <string name="title_publish">发布消息</string>
+    <string name="label_topic">主题</string>
+    <string name="label_message">消息内容</string>
+    <string name="btn_send">发送</string>
+    <string name="title_ota_remote">远程 OTA 升级</string>
+    <string name="label_upgrade_id">升级 ID (设备 ID)</string>
+    <string name="hint_upgrade_id">例如：CYJ_2512121H1001B</string>
+    <string name="btn_start_ota_upgrade">开始 OTA 升级</string>
+    <string name="title_command_center">指令中心</string>
+    <string name="label_send_command">发送指令</string>
+    <string name="title_system_logs">系统日志</string>
+
+    <string name="nfc_status_ready">准备扫描</string>
+    <string name="nfc_status_scanning">请将手机靠近标签...</string>
+    <string name="nfc_status_paused">扫描已暂停</string>
+    <string name="nfc_status_detected">检测到标签!</string>
+    <string name="nfc_status_disabled_device">此设备已禁用 NFC</string>
+
+    <!-- Database Screen -->
+    <string name="db_title">数据库查看器</string>
+    <string name="db_tab_sampling">采样</string>
+    <string name="db_tab_sending">送样</string>
+    <string name="db_tab_retention">留样</string>
+    <string name="db_tab_door">开关门</string>
+    <string name="db_status_unknown">未知</string>
+    <string name="db_status_connecting">连接中...</string>
+    <string name="db_status_connected">已连接数据库</string>
+    <string name="db_status_failed">连接失败</string>
+    <string name="btn_refresh_data">刷新数据</string>
+    <string name="label_records_found">找到记录数: %1$d</string>
+    <string name="msg_no_data">暂无数据</string>
+    <string name="label_db_status">数据库状态: %1$s</string>
+    <string name="btn_test_conn">测试连接</string>
+    <string name="msg_no_records">没有找到记录.</string>
+    <string name="label_device_id">设备 ID</string>
+    <string name="hint_device_id">例如：CYJ2601BZL088C</string>
+    <string name="msg_enter_device_id">请输入设备ID查询记录</string>
+    <string name="label_id">ID: %1$s</string>
+    <string name="label_type">类型: %1$s</string>
+    <string name="record_type_sampling">Sampling 记录</string>
+    
+    <!-- 采样/送样模式 -->
+    <string name="mode_sampling_0">时间等比</string>
+    <string name="mode_sampling_1">定时采样</string>
+    <string name="mode_sampling_2">通讯触发</string>
+    <string name="mode_sampling_3">流量触发</string>
+    <string name="mode_sampling_4">开关触发</string>
+    
+    <!-- 留样模式 -->
+    <string name="mode_retention_0">超标留样</string>
+    <string name="mode_retention_1">直接留样</string>
+    <string name="mode_retention_2">比对留样</string>
+    <string name="mode_retention_3">通信触发</string>
+    <string name="mode_retention_4">同步留样</string>
+    <string name="mode_retention_5">只送不留</string>
+    <string name="mode_retention_6">开关触发</string>
+    
+    <!-- 结果 -->
+    <string name="result_ok">成功</string>
+    <string name="result_ng">失败</string>
+    
+    <!-- 门禁 -->
+    <string name="door_open">开门</string>
+    <string name="door_close">关门</string>
+    
+    <!-- Crash Activity -->
+    <string name="crash_title">程序崩溃了!</string>
+    <string name="label_root_cause">根本原因: %1$s</string>
+    <string name="btn_restart_app">重启应用</string>
+</resources>

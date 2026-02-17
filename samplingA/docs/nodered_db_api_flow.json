@@ -1,0 +1,449 @@
+[
+    {
+        "id": "flow_db_api",
+        "type": "tab",
+        "label": "数据库API",
+        "disabled": false,
+        "info": "采样机数据库查询API"
+    },
+    {
+        "id": "http_test_conn",
+        "type": "http in",
+        "z": "flow_db_api",
+        "name": "测试连接",
+        "url": "/api/db/test",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 80,
+        "wires": [
+            [
+                "pg_test"
+            ]
+        ]
+    },
+    {
+        "id": "pg_test",
+        "type": "postgresql",
+        "z": "flow_db_api",
+        "name": "测试查询",
+        "query": "SELECT 1 as result",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 320,
+        "y": 80,
+        "wires": [
+            [
+                "format_test_resp"
+            ]
+        ]
+    },
+    {
+        "id": "format_test_resp",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "格式化测试响应",
+        "func": "msg.payload = {\n    success: true,\n    message: \"数据库连接成功\"\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 510,
+        "y": 80,
+        "wires": [
+            [
+                "http_test_resp"
+            ]
+        ]
+    },
+    {
+        "id": "http_test_resp",
+        "type": "http response",
+        "z": "flow_db_api",
+        "name": "返回测试结果",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 720,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "http_sampling",
+        "type": "http in",
+        "z": "flow_db_api",
+        "name": "采样查询",
+        "url": "/api/db/sampling",
+        "method": "get",
+        "upload": false,
+        "x": 140,
+        "y": 160,
+        "wires": [
+            [
+                "build_sampling_query"
+            ]
+        ]
+    },
+    {
+        "id": "build_sampling_query",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "构建采样查询",
+        "func": "var deviceId = msg.req.query.device_id;\nvar page = parseInt(msg.req.query.page) || 1;\nvar pageSize = parseInt(msg.req.query.page_size) || 50;\nvar offset = (page - 1) * pageSize;\nif (!deviceId) {\n    msg.payload = { success: false, message: '请提供设备ID' };\n    return [null, msg];\n}\nmsg.params = [deviceId, pageSize, offset];\nmsg.query = \"SELECT id, \\\"桶号\\\" AS bucket, \\\"模式\\\" AS mode, \\\"实际采样量\\\" AS amount, \\\"开始时间\\\" AS start_time, \\\"结果\\\" AS result FROM \\\"采样事件\\\" WHERE \\\"设备ID\\\" = $1 ORDER BY id DESC LIMIT $2 OFFSET $3\";\nreturn [msg, null];",
+        "outputs": 2,
+        "x": 340,
+        "y": 160,
+        "wires": [
+            [
+                "pg_sampling"
+            ],
+            [
+                "http_sampling_resp"
+            ]
+        ]
+    },
+    {
+        "id": "pg_sampling",
+        "type": "postgresql",
+        "z": "flow_db_api",
+        "name": "查询采样记录",
+        "query": "",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 540,
+        "y": 160,
+        "wires": [
+            [
+                "format_sampling"
+            ]
+        ]
+    },
+    {
+        "id": "format_sampling",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "格式化采样数据",
+        "func": "msg.payload = {\n    success: true,\n    type: \"Sampling\",\n    data: msg.payload || []\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 760,
+        "y": 160,
+        "wires": [
+            [
+                "http_sampling_resp"
+            ]
+        ]
+    },
+    {
+        "id": "http_sampling_resp",
+        "type": "http response",
+        "z": "flow_db_api",
+        "name": "返回采样数据",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 940,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "http_sending",
+        "type": "http in",
+        "z": "flow_db_api",
+        "name": "送样查询",
+        "url": "/api/db/sending",
+        "method": "get",
+        "upload": false,
+        "x": 140,
+        "y": 240,
+        "wires": [
+            [
+                "build_sending_query"
+            ]
+        ]
+    },
+    {
+        "id": "build_sending_query",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "构建送样查询",
+        "func": "var deviceId = msg.req.query.device_id;\nvar page = parseInt(msg.req.query.page) || 1;\nvar pageSize = parseInt(msg.req.query.page_size) || 50;\nvar offset = (page - 1) * pageSize;\nif (!deviceId) {\n    msg.payload = { success: false, message: '请提供设备ID' };\n    return [null, msg];\n}\nmsg.params = [deviceId, pageSize, offset];\nmsg.query = \"SELECT id, \\\"桶号\\\" AS bucket, \\\"模式\\\" AS mode, \\\"送样量\\\" AS amount, \\\"开始时间\\\" AS start_time, \\\"结果\\\" AS result FROM \\\"送样事件\\\" WHERE \\\"设备ID\\\" = $1 ORDER BY id DESC LIMIT $2 OFFSET $3\";\nreturn [msg, null];",
+        "outputs": 2,
+        "x": 340,
+        "y": 240,
+        "wires": [
+            [
+                "pg_sending"
+            ],
+            [
+                "http_sending_resp"
+            ]
+        ]
+    },
+    {
+        "id": "pg_sending",
+        "type": "postgresql",
+        "z": "flow_db_api",
+        "name": "查询送样记录",
+        "query": "",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 540,
+        "y": 240,
+        "wires": [
+            [
+                "format_sending"
+            ]
+        ]
+    },
+    {
+        "id": "format_sending",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "格式化送样数据",
+        "func": "msg.payload = {\n    success: true,\n    type: \"Sending\",\n    data: msg.payload || []\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 760,
+        "y": 240,
+        "wires": [
+            [
+                "http_sending_resp"
+            ]
+        ]
+    },
+    {
+        "id": "http_sending_resp",
+        "type": "http response",
+        "z": "flow_db_api",
+        "name": "返回送样数据",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 940,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "http_retention",
+        "type": "http in",
+        "z": "flow_db_api",
+        "name": "留样查询",
+        "url": "/api/db/retention",
+        "method": "get",
+        "upload": false,
+        "x": 140,
+        "y": 320,
+        "wires": [
+            [
+                "build_retention_query"
+            ]
+        ]
+    },
+    {
+        "id": "build_retention_query",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "构建留样查询",
+        "func": "var deviceId = msg.req.query.device_id;\nvar page = parseInt(msg.req.query.page) || 1;\nvar pageSize = parseInt(msg.req.query.page_size) || 50;\nvar offset = (page - 1) * pageSize;\nif (!deviceId) {\n    msg.payload = { success: false, message: '请提供设备ID' };\n    return [null, msg];\n}\nmsg.params = [deviceId, pageSize, offset];\nmsg.query = \"SELECT id, \\\"瓶号\\\" AS bottle, \\\"模式\\\" AS mode, \\\"留样量\\\" AS amount, \\\"开始时间\\\" AS start_time, \\\"结果\\\" AS result FROM \\\"留样事件\\\" WHERE \\\"设备ID\\\" = $1 ORDER BY id DESC LIMIT $2 OFFSET $3\";\nreturn [msg, null];",
+        "outputs": 2,
+        "x": 340,
+        "y": 320,
+        "wires": [
+            [
+                "pg_retention"
+            ],
+            [
+                "http_retention_resp"
+            ]
+        ]
+    },
+    {
+        "id": "pg_retention",
+        "type": "postgresql",
+        "z": "flow_db_api",
+        "name": "查询留样记录",
+        "query": "",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 540,
+        "y": 320,
+        "wires": [
+            [
+                "format_retention"
+            ]
+        ]
+    },
+    {
+        "id": "format_retention",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "格式化留样数据",
+        "func": "msg.payload = {\n    success: true,\n    type: \"Retention\",\n    data: msg.payload || []\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 760,
+        "y": 320,
+        "wires": [
+            [
+                "http_retention_resp"
+            ]
+        ]
+    },
+    {
+        "id": "http_retention_resp",
+        "type": "http response",
+        "z": "flow_db_api",
+        "name": "返回留样数据",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 940,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "http_door",
+        "type": "http in",
+        "z": "flow_db_api",
+        "name": "开关门查询",
+        "url": "/api/db/door",
+        "method": "get",
+        "upload": false,
+        "x": 150,
+        "y": 400,
+        "wires": [
+            [
+                "build_door_query"
+            ]
+        ]
+    },
+    {
+        "id": "build_door_query",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "构建开关门查询",
+        "func": "var deviceId = msg.req.query.device_id;\nvar page = parseInt(msg.req.query.page) || 1;\nvar pageSize = parseInt(msg.req.query.page_size) || 50;\nvar offset = (page - 1) * pageSize;\nif (!deviceId) {\n    msg.payload = { success: false, message: '请提供设备ID' };\n    return [null, msg];\n}\nmsg.params = [deviceId, pageSize, offset];\nmsg.query = \"SELECT id, \\\"事件类型\\\" AS event_type, \\\"时间戳\\\" AS timestamp FROM \\\"门禁事件\\\" WHERE \\\"设备ID\\\" = $1 ORDER BY id DESC LIMIT $2 OFFSET $3\";\nreturn [msg, null];",
+        "outputs": 2,
+        "x": 350,
+        "y": 400,
+        "wires": [
+            [
+                "pg_door"
+            ],
+            [
+                "http_door_resp"
+            ]
+        ]
+    },
+    {
+        "id": "pg_door",
+        "type": "postgresql",
+        "z": "flow_db_api",
+        "name": "查询开关门记录",
+        "query": "",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 550,
+        "y": 400,
+        "wires": [
+            [
+                "format_door"
+            ]
+        ]
+    },
+    {
+        "id": "format_door",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "格式化开关门数据",
+        "func": "msg.payload = {\n    success: true,\n    type: \"Door\",\n    data: msg.payload || []\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 560,
+        "y": 400,
+        "wires": [
+            [
+                "http_door_resp"
+            ]
+        ]
+    },
+    {
+        "id": "http_door_resp",
+        "type": "http response",
+        "z": "flow_db_api",
+        "name": "返回开关门数据",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 770,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "pg_config",
+        "type": "postgreSQLConfig",
+        "name": "dydb数据库",
+        "host": "124.222.59.221",
+        "port": "5432",
+        "database": "dydb",
+        "ssl": false,
+        "user": "ling",
+        "password": "e60o34que60o34qu",
+        "max": 10,
+        "idleTimeoutMillis": 1000,
+        "connectionTimeoutMillis": 10000
+    },
+    {
+        "id": "catch_errors",
+        "type": "catch",
+        "z": "flow_db_api",
+        "name": "捕获错误",
+        "scope": null,
+        "uncaught": false,
+        "x": 140,
+        "y": 500,
+        "wires": [
+            [
+                "format_error"
+            ]
+        ]
+    },
+    {
+        "id": "format_error",
+        "type": "function",
+        "z": "flow_db_api",
+        "name": "格式化错误",
+        "func": "msg.payload = {\n    success: false,\n    message: msg.error.message || \"未知错误\"\n};\nmsg.statusCode = 500;\nreturn msg;",
+        "outputs": 1,
+        "x": 330,
+        "y": 500,
+        "wires": [
+            [
+                "http_error_resp"
+            ]
+        ]
+    },
+    {
+        "id": "http_error_resp",
+        "type": "http response",
+        "z": "flow_db_api",
+        "name": "返回错误",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 520,
+        "y": 500,
+        "wires": []
+    }
+]

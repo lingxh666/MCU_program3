@@ -1,0 +1,42 @@
+# Build artifacts
+build_log.txt
+*.o
+*.d
+*.lst
+*.htm
+*.map
+*.axf
+*.hex
+*.bin
+*.elf
+*.lnp
+*.crf
+*.dep
+*.iex
+*.sct
+
+# Keil MDK
+**/Listings/
+**/Objects/
+**/RTE/
+**/DebugConfig/
+*.uvguix.*
+*.bak
+*.scvd
+JLinkLog.txt
+JLinkSettings.ini
+EventRecorderStub.scvd
+
+# IDE config
+.claude/
+.serena/
+.vscode/
+
+# Windows artifacts
+nul
+Thumbs.db
+desktop.ini
+
+# Misc
+*.tmp
+*.log
