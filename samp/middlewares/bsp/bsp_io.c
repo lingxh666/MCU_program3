@@ -42,22 +42,22 @@ void relay_set(relay_id_t id, uint8_t state)
 {
   if(id >= RELAY_COUNT) return;
   if(state)
-    gpio_bits_set(relay_table[id].port, relay_table[id].pin);
-  else
     gpio_bits_reset(relay_table[id].port, relay_table[id].pin);
+  else
+    gpio_bits_set(relay_table[id].port, relay_table[id].pin);
 }
 
 uint8_t relay_get_state(relay_id_t id)
 {
   if(id >= RELAY_COUNT) return 0;
-  return (gpio_output_data_read(relay_table[id].port) & relay_table[id].pin) ? 1 : 0;
+  return (gpio_output_data_read(relay_table[id].port) & relay_table[id].pin) ? 0 : 1;
 }
 
 void relay_all_off(void)
 {
   uint8_t i;
   for(i = 0; i < RELAY_COUNT; i++)
-    gpio_bits_reset(relay_table[i].port, relay_table[i].pin);
+    gpio_bits_set(relay_table[i].port, relay_table[i].pin);
   /* H-bridge motor stop */
   bottle_motor_set(MOTOR_STOP);
 }

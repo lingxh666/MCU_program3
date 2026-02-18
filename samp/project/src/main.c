@@ -76,7 +76,7 @@
 int main(void)
 {
   /* add user code begin 1 */
-	nvic_vector_table_set(NVIC_VECTTAB_FLASH, 0x2000);
+//	nvic_vector_table_set(NVIC_VECTTAB_FLASH, 0x2000);
   /* add user code end 1 */
 
   /* system clock config. */

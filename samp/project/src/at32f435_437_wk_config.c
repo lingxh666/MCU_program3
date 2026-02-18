@@ -101,12 +101,14 @@ void wk_system_clock_config(void)
   /* enable battery powered domain access */
   pwc_battery_powered_domain_access(TRUE);
 
-  /* check lext enabled or not */
+  /* check lext enabled or not, 超时后回退到LICK */
   if(crm_flag_get(CRM_LEXT_STABLE_FLAG) == RESET)
   {
     crm_clock_source_enable(CRM_CLOCK_SOURCE_LEXT, TRUE);
+    volatile uint32_t lext_timeout = 0;
     while(crm_flag_get(CRM_LEXT_STABLE_FLAG) == RESET)
     {
+      if(++lext_timeout > 0x1FFFFF) break; /* 约3秒超时 */
     }
   }
   /* disable battery powered domain access */
@@ -358,12 +360,12 @@ void wk_gpio_config(void)
   gpio_init(GPIOB, &gpio_init_struct);
 
   /* gpio output config */
-  gpio_bits_reset(GPIOE, GPIO_PINS_14 | GPIO_PINS_15);
-  gpio_bits_reset(GPIOB, GPIO_PINS_10 | GPIO_PINS_11 | GPIO_PINS_12 | GPIO_PINS_13);
-  gpio_bits_reset(GPIOD, GPIO_PINS_10 | GPIO_PINS_11 | GPIO_PINS_12 | GPIO_PINS_13 | GPIO_PINS_14 | 
+  gpio_bits_set(GPIOE, GPIO_PINS_14 | GPIO_PINS_15);
+  gpio_bits_set(GPIOB, GPIO_PINS_10 | GPIO_PINS_11 | GPIO_PINS_12 | GPIO_PINS_13);
+  gpio_bits_set(GPIOD, GPIO_PINS_10 | GPIO_PINS_11 | GPIO_PINS_12 | GPIO_PINS_13 | GPIO_PINS_14 | 
                   GPIO_PINS_15);
-  gpio_bits_reset(GPIOC, GPIO_PINS_8 | GPIO_PINS_9);
-  gpio_bits_reset(GPIOA, GPIO_PINS_8 | GPIO_PINS_10 | CH_PIN);
+  gpio_bits_set(GPIOC, GPIO_PINS_8 | GPIO_PINS_9);
+  gpio_bits_set(GPIOA, GPIO_PINS_8 | GPIO_PINS_10 | CH_PIN);
 
   gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
   gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
