@@ -84,16 +84,16 @@ void bottle_motor_set(motor_dir_t dir)
   switch(dir)
   {
     case MOTOR_EMPTY:
-      gpio_bits_set(GPIOE, GPIO_PINS_14);
-      gpio_bits_reset(GPIOE, GPIO_PINS_15);
+      gpio_bits_set(GPIOE, GPIO_PINS_15);    /* 先断开反向 */
+      gpio_bits_reset(GPIOE, GPIO_PINS_14);  /* 再导通正向 */
       break;
     case MOTOR_RESTORE:
-      gpio_bits_reset(GPIOE, GPIO_PINS_14);
-      gpio_bits_set(GPIOE, GPIO_PINS_15);
+      gpio_bits_set(GPIOE, GPIO_PINS_14);    /* 先断开正向 */
+      gpio_bits_reset(GPIOE, GPIO_PINS_15);  /* 再导通反向 */
       break;
     default: /* MOTOR_STOP */
-      gpio_bits_reset(GPIOE, GPIO_PINS_14);
-      gpio_bits_reset(GPIOE, GPIO_PINS_15);
+      gpio_bits_set(GPIOE, GPIO_PINS_14);    /* 断开 */
+      gpio_bits_set(GPIOE, GPIO_PINS_15);    /* 断开 */
       break;
   }
 }
@@ -102,7 +102,7 @@ motor_dir_t bottle_motor_get_dir(void)
 {
   uint8_t pe14 = (gpio_output_data_read(GPIOE) & GPIO_PINS_14) ? 1 : 0;
   uint8_t pe15 = (gpio_output_data_read(GPIOE) & GPIO_PINS_15) ? 1 : 0;
-  if(pe14 && !pe15) return MOTOR_EMPTY;
-  if(!pe14 && pe15) return MOTOR_RESTORE;
+  if(!pe14 && pe15) return MOTOR_EMPTY;
+  if(pe14 && !pe15) return MOTOR_RESTORE;
   return MOTOR_STOP;
 }
