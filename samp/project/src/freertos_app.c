@@ -349,12 +349,12 @@ void my_task01_func(void *pvParameters)
   */
 void my_task02_func(void *pvParameters)
 {
-  /* ===== 临时测试代码 START（步骤 S04） ===== */
+  /* ===== 临时测试代码 START（步骤 S05） ===== */
   vTaskDelay(pdMS_TO_TICKS(2000));
-  printf("\r\n===== S04: GPIO全关闭基线 =====\r\n");
+  printf("\r\n===== S05: 逐路继电器开关 =====\r\n");
 
   relay_all_off();
-  vTaskDelay(pdMS_TO_TICKS(100));
+  vTaskDelay(pdMS_TO_TICKS(200));
 
   const char *names[] = {
     "进水阀","瞬时阀","送留样阀","A排水","B排水",
@@ -362,21 +362,24 @@ void my_task02_func(void *pvParameters)
     "外接泵","备用1","备用2","备用3"
   };
 
-  uint8_t all_off = 1;
+  uint8_t pass = 1;
   for(int i = 0; i < RELAY_COUNT; i++) {
-    uint8_t st = relay_get_state((relay_id_t)i);
-    printf("  [%02d] %-8s 状态=%d %s\r\n", i, names[i], st,
-           st == 0 ? "OK" : "异常!");
-    if(st != 0) all_off = 0;
+    relay_set((relay_id_t)i, 1);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    uint8_t on = relay_get_state((relay_id_t)i);
+
+    relay_set((relay_id_t)i, 0);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    uint8_t off = relay_get_state((relay_id_t)i);
+
+    uint8_t ok = (on == 1 && off == 0);
+    printf("  [%02d] %-8s 开=%d 关=%d %s\r\n",
+           i, names[i], on, off, ok ? "PASS" : "FAIL");
+    if(!ok) pass = 0;
   }
 
-  motor_dir_t mdir = bottle_motor_get_dir();
-  printf("  H桥电机方向=%d (期望0=STOP) %s\r\n", mdir,
-         mdir == MOTOR_STOP ? "OK" : "异常!");
-  if(mdir != MOTOR_STOP) all_off = 0;
-
-  printf("结果: %s\r\n", all_off ? "PASS" : "FAIL");
-  printf("===== S04 完成 =====\r\n");
+  printf("结果: %s\r\n", pass ? "PASS" : "FAIL");
+  printf("===== S05 完成 =====\r\n");
   /* ===== 临时测试代码 END ===== */
 
   while(1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
