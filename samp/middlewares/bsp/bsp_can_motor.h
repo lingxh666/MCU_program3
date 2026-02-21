@@ -44,6 +44,17 @@ void can_motor_lock_panel(void);
 motor_status_t can_motor_get_status(uint8_t motor_id);
 void can_motor_rx_irq(void);
 
+/* 通用CAN接收 */
+#define CAN_RX_BUF_SIZE  16
+
+typedef struct {
+  uint16_t id;
+  uint8_t  dlc;
+  uint8_t  data[8];
+} can_rx_frame_t;
+
+uint8_t can_rx_get(can_rx_frame_t *frame);
+
 #ifdef __cplusplus
 }
 #endif

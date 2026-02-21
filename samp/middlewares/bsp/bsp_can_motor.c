@@ -4,6 +4,10 @@
 /* 电机状态缓存 */
 static motor_status_t motor_status[MOTOR_COUNT];
 
+/* 通用CAN接收环形缓冲区 */
+static can_rx_frame_t rx_buf[CAN_RX_BUF_SIZE];
+static volatile uint8_t rx_head, rx_tail;
+
 /* 发送CAN帧 */
 static uint8_t can_send_frame(uint16_t id, const uint8_t *data, uint8_t len)
 {
@@ -72,27 +76,43 @@ motor_status_t can_motor_get_status(uint8_t motor_id)
   return motor_status[motor_id];
 }
 
+/* 读取一帧接收数据，返回1=有数据 0=空 */
+uint8_t can_rx_get(can_rx_frame_t *frame)
+{
+  if(rx_head == rx_tail) return 0;
+  *frame = rx_buf[rx_tail];
+  rx_tail = (rx_tail + 1) % CAN_RX_BUF_SIZE;
+  return 1;
+}
+
 /* CAN1 FIFO0接收中断中调用 */
 void can_motor_rx_irq(void)
 {
   can_rx_message_type rx_msg;
-  uint8_t mid;
 
   while(can_receive_message_pending_get(CAN1, CAN_RX_FIFO0) > 0)
   {
     can_message_receive(CAN1, CAN_RX_FIFO0, &rx_msg);
 
-    if(rx_msg.standard_id != CAN_ID_MOTOR_RX || rx_msg.dlc < 5)
-      continue;
+    /* 存入通用接收缓冲区 */
+    uint8_t next = (rx_head + 1) % CAN_RX_BUF_SIZE;
+    if(next != rx_tail) {
+      rx_buf[rx_head].id  = (uint16_t)rx_msg.standard_id;
+      rx_buf[rx_head].dlc = rx_msg.dlc;
+      memcpy(rx_buf[rx_head].data, rx_msg.data, 8);
+      rx_head = next;
+    }
 
-    mid = rx_msg.data[0];
-    if(mid >= MOTOR_COUNT)
-      continue;
-
-    motor_status[mid].speed     = ((uint16_t)rx_msg.data[1] << 8) | rx_msg.data[2];
-    motor_status[mid].direction = rx_msg.data[3];
-    motor_status[mid].running   = rx_msg.data[4];
-    if(rx_msg.dlc >= 6)
-      motor_status[mid].error = rx_msg.data[5];
+    /* 电机状态解析 */
+    if(rx_msg.standard_id == CAN_ID_MOTOR_RX && rx_msg.dlc >= 5) {
+      uint8_t mid = rx_msg.data[0];
+      if(mid < MOTOR_COUNT) {
+        motor_status[mid].speed     = ((uint16_t)rx_msg.data[1] << 8) | rx_msg.data[2];
+        motor_status[mid].direction = rx_msg.data[3];
+        motor_status[mid].running   = rx_msg.data[4];
+        if(rx_msg.dlc >= 6)
+          motor_status[mid].error = rx_msg.data[5];
+      }
+    }
   }
 }

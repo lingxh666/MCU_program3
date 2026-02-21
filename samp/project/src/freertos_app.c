@@ -13,6 +13,19 @@
 /* private includes ----------------------------------------------------------*/
 /* add user code begin private includes */
 #include "bsp_io.h"
+#include "bsp_adc.h"
+#include "bsp_uart.h"
+#include "bsp_screen.h"
+#include "bsp_can_motor.h"
+#include "bsp_qspi_flash.h"
+#include "fal_cfg.h"
+#include "fal.h"
+#include "app_flashdb.h"
+#include "bsp_wiegand.h"
+#include "bsp_wdt.h"
+#include "usb_core.h"
+#include "cdc_class.h"
+#include <string.h>
 /* add user code end private includes */
 
 /* private typedef -----------------------------------------------------------*/
@@ -128,7 +141,7 @@ void freertos_task_create(void)
   /* create my_task02 task */
   xTaskCreate(my_task02_func,
               "my_task02",
-              128,
+              512,
               NULL,
               0,
               &my_task02_handle);
@@ -349,39 +362,7 @@ void my_task01_func(void *pvParameters)
   */
 void my_task02_func(void *pvParameters)
 {
-  /* ===== 临时测试代码 START（步骤 S05） ===== */
   vTaskDelay(pdMS_TO_TICKS(2000));
-  printf("\r\n===== S05: 逐路继电器开关 =====\r\n");
-
-  relay_all_off();
-  vTaskDelay(pdMS_TO_TICKS(200));
-
-  const char *names[] = {
-    "进水阀","瞬时阀","送留样阀","A排水","B排水",
-    "A搅拌","B搅拌","出水阀A","出水阀B","锁",
-    "外接泵","备用1","备用2","备用3"
-  };
-
-  uint8_t pass = 1;
-  for(int i = 0; i < RELAY_COUNT; i++) {
-    relay_set((relay_id_t)i, 1);
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    uint8_t on = relay_get_state((relay_id_t)i);
-
-    relay_set((relay_id_t)i, 0);
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    uint8_t off = relay_get_state((relay_id_t)i);
-
-    uint8_t ok = (on == 1 && off == 0);
-    printf("  [%02d] %-8s 开=%d 关=%d %s\r\n",
-           i, names[i], on, off, ok ? "PASS" : "FAIL");
-    if(!ok) pass = 0;
-  }
-
-  printf("结果: %s\r\n", pass ? "PASS" : "FAIL");
-  printf("===== S05 完成 =====\r\n");
-  /* ===== 临时测试代码 END ===== */
-
   while(1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
 }
 

@@ -63,7 +63,6 @@ uint8_t qspi_flash_init(void)
 
 uint16_t qspi_flash_read_id(void)
 {
-  uint8_t id_buf[2];
   qspi_cmd_type cmd;
   cmd.pe_mode_enable = FALSE;
   cmd.pe_mode_operate_code = 0;
@@ -77,34 +76,23 @@ uint16_t qspi_flash_read_id(void)
   cmd.read_status_config = QSPI_RSTSC_HW_AUTO;
   cmd.read_status_enable = FALSE;
   cmd.write_data_enable = FALSE;
-  qspi_cmd_send(&cmd);
+  qspi_cmd_operation_kick(QSPI2, &cmd);
 
-  id_buf[0] = *(__IO uint8_t *)QSPI2;
-  id_buf[1] = *(__IO uint8_t *)QSPI2;
-  return ((uint16_t)id_buf[0] << 8) | id_buf[1];
+  while(qspi_flag_get(QSPI2, QSPI_RXFIFORDY_FLAG) == RESET);
+  uint8_t mf = qspi_byte_read(QSPI2);
+  uint8_t id = qspi_byte_read(QSPI2);
+
+  while(qspi_flag_get(QSPI2, QSPI_CMDSTS_FLAG) == RESET);
+  qspi_flag_clear(QSPI2, QSPI_CMDSTS_FLAG);
+  return ((uint16_t)mf << 8) | id;
 }
 
 /* ======================== Read ======================== */
 void qspi_flash_read(uint32_t addr, uint8_t *buf, uint32_t len)
 {
-  qspi_cmd_type cmd;
-  cmd.pe_mode_enable = FALSE;
-  cmd.pe_mode_operate_code = 0;
-  cmd.instruction_code = QFLASH_CMD_FAST_READ;
-  cmd.instruction_length = QSPI_CMD_INSLEN_1_BYTE;
-  cmd.address_code = addr;
-  cmd.address_length = QSPI_CMD_ADRLEN_3_BYTE;
-  cmd.data_counter = len;
-  cmd.second_dummy_cycle_num = 8;
-  cmd.operation_mode = QSPI_OPERATE_MODE_111;
-  cmd.read_status_config = QSPI_RSTSC_HW_AUTO;
-  cmd.read_status_enable = FALSE;
-  cmd.write_data_enable = FALSE;
-  qspi_cmd_send(&cmd);
-
-  uint32_t i;
-  for(i = 0; i < len; i++)
-    buf[i] = *(__IO uint8_t *)QSPI2;
+  qspi_xip_enable(QSPI2, TRUE);
+  memcpy(buf, (const void *)(QSPI2_MEM_BASE + addr), len);
+  qspi_xip_enable(QSPI2, FALSE);
 }
 
 /* ======================== Page Program (max 256B) ======================== */
@@ -131,8 +119,10 @@ static void qspi_flash_page_write(uint32_t addr, uint8_t *buf, uint32_t len)
   qspi_cmd_operation_kick(QSPI2, &cmd);
 
   uint32_t i;
-  for(i = 0; i < len; i++)
-    *(__IO uint8_t *)QSPI2 = buf[i];
+  for(i = 0; i < len; i++) {
+    while(qspi_flag_get(QSPI2, QSPI_TXFIFORDY_FLAG) == RESET);
+    qspi_byte_write(QSPI2, buf[i]);
+  }
 
   while(qspi_flag_get(QSPI2, QSPI_CMDSTS_FLAG) == RESET);
   qspi_flag_clear(QSPI2, QSPI_CMDSTS_FLAG);

@@ -13,6 +13,7 @@ static void feed_dog(void)
 
 static int qspi_nor_init(void)
 {
+    qspi_flash_init();
     uint16_t flash_id = qspi_flash_read_id();
 
     switch(flash_id) {
