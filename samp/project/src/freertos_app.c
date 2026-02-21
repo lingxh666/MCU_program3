@@ -23,6 +23,7 @@
 #include "app_flashdb.h"
 #include "bsp_wiegand.h"
 #include "bsp_wdt.h"
+#include "bsp_pvm.h"
 #include "usb_core.h"
 #include "cdc_class.h"
 #include <string.h>

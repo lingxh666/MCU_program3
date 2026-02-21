@@ -64,7 +64,7 @@
 
 /* private user code ---------------------------------------------------------*/
 /* add user code begin 0 */
-
+#include "bsp_pvm.h"
 /* add user code end 0 */
 
 /* external variables ---------------------------------------------------------*/
@@ -603,6 +603,16 @@ void EXINT9_5_IRQHandler(void)
   {
     exint_flag_clear(EXINT_LINE_7);
     wiegand_d1_irq();
+  }
+}
+
+/* PVM中断 - 电压监测 */
+void PVM_IRQHandler(void)
+{
+  if(exint_interrupt_flag_get(EXINT_LINE_16) != RESET)
+  {
+    exint_flag_clear(EXINT_LINE_16);
+    bsp_pvm_irq();
   }
 }
 

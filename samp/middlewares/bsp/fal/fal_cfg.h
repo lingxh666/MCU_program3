@@ -23,7 +23,7 @@ extern struct fal_flash_dev QSPI_NOR_flash;
 
 #define FAL_PART_TABLE                                                                       \
 {                                                                                            \
-    {FAL_PART_MAGIC_WORD, "fdb_kvdb", "AT32_onchip", 0,          512*1024,     0}, \
+    {FAL_PART_MAGIC_WORD, "fdb_kvdb", "AT32_onchip", 0,          510*1024,     0}, \
     {FAL_PART_MAGIC_WORD, "fdb_tsdb", "qspi_nor",    0,          8*1024*1024,  0}, \
 }
 
