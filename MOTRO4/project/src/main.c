@@ -149,7 +149,7 @@ int main(void)
       g_1s_update_flag = 0;
       MotorUpdateLEDIndicator();
       MotorMonitorUpdate();
-      /* 打印4路电机频率，供逻辑分析仪对比 */
+      /* 打印4路电机状态 */
       {
         uint8_t i;
         for(i = 0; i < MOTOR_COUNT; i++)
@@ -158,6 +158,12 @@ int main(void)
           if(rpm > 0)
             printf("M%d: %uRPM %uHz dir=%d\r\n", i, rpm, RPM_TO_HZ(rpm), MotorGetDirection((motor_id_t)i));
         }
+        /* 打印4路ADC电流 */
+        printf("ADC: %u,%u,%u,%u mA  raw: %u,%u,%u,%u\r\n",
+          motor_monitor[0].current_ma, motor_monitor[1].current_ma,
+          motor_monitor[2].current_ma, motor_monitor[3].current_ma,
+          motor_monitor[0].raw_adc, motor_monitor[1].raw_adc,
+          motor_monitor[2].raw_adc, motor_monitor[3].raw_adc);
       }
     }
 
