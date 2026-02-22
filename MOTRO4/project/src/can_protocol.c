@@ -8,6 +8,7 @@
 #include "can_protocol.h"
 #include "stepper_motor.h"
 #include "motor_monitor.h"
+#include <stdio.h>
 
 /* CAN接收环形缓冲 */
 #define CAN_RX_QUEUE_SIZE   8
@@ -90,7 +91,7 @@ static void handle_control_frame(uint8_t motor_id, const uint8_t *data)
 /**
  * @brief  发送单个电机状态应答帧
  */
-static void send_status_frame(uint8_t motor_id)
+static void send_status_frame(uint8_t motor_id, can_txbuf_select_type txbuf)
 {
   can_txbuf_type tx_msg;
   uint16_t rpm;
@@ -118,8 +119,7 @@ static void send_status_frame(uint8_t motor_id)
   tx_msg.data[6] = (uint8_t)MotorGetMonitorStatus(motor_id);
   tx_msg.data[7] = MotorGetFaultCode(motor_id);
 
-  if (can_txbuf_write(CAN1, CAN_TXBUF_PTB, &tx_msg) == SUCCESS)
-    can_txbuf_transmit(CAN1, CAN_TRANSMIT_PTB);
+  can_txbuf_write(CAN1, txbuf, &tx_msg);
 }
 
 /**
@@ -135,6 +135,7 @@ void CanProtocolProcess(void)
     msg = rx_queue[rx_tail];
     rx_tail = (rx_tail + 1) % CAN_RX_QUEUE_SIZE;
     id = msg.id;
+    printf("CAN RX: ID=0x%03X DLC=%d\r\n", id, msg.data_length);
 
     /* 控制帧: 0x200-0x203 */
     if (id >= CAN_ID_CONTROL_BASE && id < (CAN_ID_CONTROL_BASE + MOTOR_COUNT))
@@ -155,6 +156,10 @@ void CanProtocolProcess(void)
 void CanProtocolSendAllStatus(void)
 {
   uint8_t i;
-  for (i = 0; i < MOTOR_COUNT; i++)
-    send_status_frame(i);
+  for (i = 0; i < MOTOR_COUNT - 1; i++)
+    send_status_frame(i, CAN_TXBUF_STB);
+  can_txbuf_transmit(CAN1, CAN_TRANSMIT_STB_ALL);
+  /* 第4帧用PTB发送 */
+  send_status_frame(MOTOR_COUNT - 1, CAN_TXBUF_PTB);
+  can_txbuf_transmit(CAN1, CAN_TRANSMIT_PTB);
 }

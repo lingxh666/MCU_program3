@@ -33,6 +33,7 @@
 #include "stepper_motor.h"
 #include "motor_monitor.h"
 #include "can_protocol.h"
+#include <stdio.h>
 /* add user code end private includes */
 
 /* private typedef -----------------------------------------------------------*/
@@ -132,6 +133,7 @@ int main(void)
   stepper_init();
   MotorMonitorInit();
   CanProtocolInit();
+  printf("MOTRO4 启动 OK\r\n");
   wdt_enable();
   /* add user code end 2 */
 
@@ -147,6 +149,16 @@ int main(void)
       g_1s_update_flag = 0;
       MotorUpdateLEDIndicator();
       MotorMonitorUpdate();
+      /* 打印4路电机频率，供逻辑分析仪对比 */
+      {
+        uint8_t i;
+        for(i = 0; i < MOTOR_COUNT; i++)
+        {
+          uint16_t rpm = MotorGetSpeedRPM((motor_id_t)i);
+          if(rpm > 0)
+            printf("M%d: %uRPM %uHz dir=%d\r\n", i, rpm, RPM_TO_HZ(rpm), MotorGetDirection((motor_id_t)i));
+        }
+      }
     }
 
     /* 喂狗 */

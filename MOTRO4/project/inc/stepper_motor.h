@@ -76,6 +76,7 @@ typedef struct
   uint8_t stop_request;
   uint8_t is_advanced_tmr;     /* TMR17等高级定时器需要output_enable */
   uint8_t shares_tmr;          /* 共享定时器标记(TMR3 CH1/CH2) */
+  uint16_t accel_tick;         /* 加速分频计数器 */
 } motor_config_t;
 
 /* 函数声明 */

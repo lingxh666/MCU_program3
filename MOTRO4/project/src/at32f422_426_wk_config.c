@@ -254,8 +254,8 @@ void wk_gpio_config(void)
 
   /* gpio output config */
   gpio_bits_reset(LED4_GPIO_PORT, LED4_PIN);
-  gpio_bits_reset(GPIOB, LED1_PIN | LED2_PIN | LED3_PIN | CW4_PIN | CW1_PIN);
-  gpio_bits_reset(GPIOF, CW2_PIN | CW3_PIN);
+  gpio_bits_reset(GPIOB, LED1_PIN | LED2_PIN | LED3_PIN | CW2_PIN | CW1_PIN);
+  gpio_bits_reset(GPIOF, CW4_PIN | CW3_PIN);
 
   gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
   gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
@@ -267,14 +267,14 @@ void wk_gpio_config(void)
   gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
   gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
   gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
-  gpio_init_struct.gpio_pins = LED1_PIN | LED2_PIN | LED3_PIN | CW4_PIN | CW1_PIN;
+  gpio_init_struct.gpio_pins = LED1_PIN | LED2_PIN | LED3_PIN | CW2_PIN | CW1_PIN;
   gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
   gpio_init(GPIOB, &gpio_init_struct);
 
   gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
   gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
   gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
-  gpio_init_struct.gpio_pins = CW2_PIN | CW3_PIN;
+  gpio_init_struct.gpio_pins = CW4_PIN | CW3_PIN;
   gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
   gpio_init(GPIOF, &gpio_init_struct);
 
@@ -427,7 +427,7 @@ void wk_can1_init(void)
 
   can_filter_struct.mask_para.id_type = TRUE;
   can_filter_struct.code_para.id_type = CAN_ID_STANDARD;
-  can_filter_struct.mask_para.id = 0x7FF;
+  can_filter_struct.mask_para.id = 0x7FF;  /* 驱动内部取反，0x7FF=不关心ID，接受所有帧 */
   can_filter_struct.code_para.id = 0x0;
   can_filter_struct.mask_para.data_length = 0xF;
   can_filter_struct.code_para.data_length = 0x0;
@@ -437,11 +437,9 @@ void wk_can1_init(void)
   can_filter_struct.code_para.recv_frame = CAN_RECV_NORMAL;
   can_filter_set(CAN1, CAN_FILTER_NUM_0, &can_filter_struct);
 
-  can_software_reset(CAN1, FALSE);
-
+  /* 在复位模式下完成所有配置 */
   can_filter_enable(CAN1, CAN_FILTER_NUM_0, TRUE);
 
-  /*can_base_config------------------------------------------------------------------*/
   can_retransmission_limit_set(CAN1, CAN_RE_TRANS_TIMES_UNLIMIT);
   can_rearbitration_limit_set(CAN1, CAN_RE_ARBI_TIMES_UNLIMIT);
   can_mode_set(CAN1, CAN_MODE_COMMUNICATE);
@@ -451,6 +449,9 @@ void wk_can1_init(void)
   can_error_warning_set(CAN1, 11);
   can_restricted_operation_enable(CAN1, FALSE);
   can_receive_all_enable(CAN1, FALSE);
+
+  /* 所有配置完成后，最后退出复位 */
+  can_software_reset(CAN1, FALSE);
 
   /* add user code begin can1_init 2 */
 

@@ -106,7 +106,7 @@ extern "C" {
 #define LED3_PIN    GPIO_PINS_2
 #define LED3_GPIO_PORT    GPIOB
 #define CW2_PIN    GPIO_PINS_6
-#define CW2_GPIO_PORT    GPIOF
+#define CW2_GPIO_PORT    GPIOB
 #define CW3_PIN    GPIO_PINS_7
 #define CW3_GPIO_PORT    GPIOF
 #define STEP4_PIN    GPIO_PINS_4
@@ -114,7 +114,7 @@ extern "C" {
 #define STEP3_PIN    GPIO_PINS_5
 #define STEP3_GPIO_PORT    GPIOB
 #define CW4_PIN    GPIO_PINS_6
-#define CW4_GPIO_PORT    GPIOB
+#define CW4_GPIO_PORT    GPIOF
 #define STEP2_PIN    GPIO_PINS_7
 #define STEP2_GPIO_PORT    GPIOB
 #define CW1_PIN    GPIO_PINS_8

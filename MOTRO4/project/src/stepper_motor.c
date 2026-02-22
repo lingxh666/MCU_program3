@@ -12,6 +12,7 @@
 #include "stepper_motor.h"
 #include "motor_monitor.h"
 #include "at32f422_426_wk_config.h"
+#include <stdio.h>
 
 /* 定时器时钟频率 160MHz */
 #define TIMER_CLOCK_FREQ     160000000UL
@@ -189,6 +190,14 @@ void MotorRun(motor_id_t motor_id, uint16_t rpm, motor_dir_t dir)
   m->target_freq = RPM_TO_HZ(rpm);
   m->stop_request = 0;
 
+  /* 从停止状态启动时，从最低速开始加速 */
+  if (m->current_rpm == 0)
+  {
+    m->current_rpm  = MIN_RPM;
+    m->current_freq = RPM_TO_HZ(MIN_RPM);
+    set_pwm_frequency(motor_id, m->current_freq);
+  }
+
   /* 高级定时器开启主输出 */
   if (m->is_advanced_tmr)
     tmr_output_enable(m->tmr, TRUE);
@@ -254,9 +263,19 @@ void MotorUpdate(motor_id_t motor_id)
     return;
   }
 
-  /* 计算每次更新的RPM步进（向上取整） */
-  rpm_step = (m->accel_rpm_per_s + UPDATE_FREQ_HZ - 1) / UPDATE_FREQ_HZ;
-  if (rpm_step < 1) rpm_step = 1;
+  /* 加速分频：accel < 1000时每N个tick步进1RPM */
+  if (m->accel_rpm_per_s >= UPDATE_FREQ_HZ)
+  {
+    rpm_step = m->accel_rpm_per_s / UPDATE_FREQ_HZ;
+  }
+  else
+  {
+    uint16_t ticks_per_step = UPDATE_FREQ_HZ / m->accel_rpm_per_s;
+    if (++m->accel_tick < ticks_per_step)
+      return;
+    m->accel_tick = 0;
+    rpm_step = 1;
+  }
 
   /* 减速停止 */
   if (m->stop_request)
