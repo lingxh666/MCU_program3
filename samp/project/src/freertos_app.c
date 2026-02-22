@@ -363,34 +363,8 @@ void my_task01_func(void *pvParameters)
   */
 void my_task02_func(void *pvParameters)
 {
-  static uint8_t rx_buf[64];
-  const uint8_t cmd[] = {0xAA, 0x01, 0x00, 0x55};
-  uint16_t rx_len;
-  uint16_t i;
-
-  vTaskDelay(pdMS_TO_TICKS(3000));
-  printf("\r\n===== S27: UART8 收发测试 (PE1=TX, PE0=RX, 9600) =====\r\n");
-
-  while(1)
-  {
-    /* 发送4字节指令 */
-    bsp_uart_send(UART_PORT_ADMODULE, cmd, sizeof(cmd));
-    printf("TX: AA 01 00 55\r\n");
-
-    vTaskDelay(pdMS_TO_TICKS(500));
-
-    /* 打印接收到的hex数据 */
-    if(bsp_uart_rx_available(UART_PORT_ADMODULE))
-    {
-      rx_len = bsp_uart_get_rxdata(UART_PORT_ADMODULE, rx_buf, sizeof(rx_buf));
-      printf("RX(%d): ", rx_len);
-      for(i = 0; i < rx_len; i++)
-        printf("%02X ", rx_buf[i]);
-      printf("\r\n");
-    }
-
-    vTaskDelay(pdMS_TO_TICKS(2000));
-  }
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  while(1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
 }
 
 
