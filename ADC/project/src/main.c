@@ -55,6 +55,9 @@ volatile uint16_t filtered_adc[ADC_CH_COUNT];     /* 滤波后ADC值 */
 volatile uint8_t  buf_ready_flag = 0;             /* 0=无 1=前半区 2=后半区 */
 volatile uint8_t  send_flag = 0;                  /* 1=定时发送触发 */
 volatile uint32_t dma_isr_count = 0;              /* DMA中断计数(调试) */
+static volatile uint16_t adc_min[ADC_CH_COUNT];   /* 每通道原始最小值(诊断) */
+static volatile uint16_t adc_max[ADC_CH_COUNT];   /* 每通道原始最大值(诊断) */
+static volatile uint16_t adc_nz[ADC_CH_COUNT];    /* 每通道非零计数(诊断) */
 /* add user code end private variables */
 
 /* private function prototypes --------------------------------------------*/
@@ -88,6 +91,7 @@ void adc_filter_process(uint16_t *buf_start)
     uint32_t sum = 0;
     uint16_t max_val = 0;
     uint16_t min_val = 4095;
+    uint16_t nonzero = 0;
 
     for(i = 0; i < ADC_SAMPLE_COUNT; i++)
     {
@@ -95,9 +99,13 @@ void adc_filter_process(uint16_t *buf_start)
       sum += v;
       if(v > max_val) max_val = v;
       if(v < min_val) min_val = v;
+      if(v != 0) nonzero++;
     }
     /* 去掉一个最大值和一个最小值后取平均 */
     filtered_adc[ch] = (uint16_t)((sum - max_val - min_val) / (ADC_SAMPLE_COUNT - 2));
+    adc_min[ch] = min_val;
+    adc_max[ch] = max_val;
+    adc_nz[ch]  = nonzero;
   }
 }
 
@@ -229,6 +237,7 @@ int main(void)
       printf("ADC值: CH0=%u CH1=%u CH3=%u CH4=%u CH5=%u CH6=%u CH9=%u\r\n",
              filtered_adc[0], filtered_adc[1], filtered_adc[2],
              filtered_adc[3], filtered_adc[4], filtered_adc[5], filtered_adc[6]);
+      printf("CH6诊断: min=%u max=%u nonzero=%u\r\n", adc_min[5], adc_max[5], adc_nz[5]);
 
       if(filtered_adc[ADC_CAL_CH_INDEX] > 0)
       {
