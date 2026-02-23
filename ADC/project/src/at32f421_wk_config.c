@@ -273,8 +273,7 @@ void wk_adc1_init(void)
   adc_ordinary_channel_set(ADC1, ADC_CHANNEL_3, 3, ADC_SAMPLETIME_71_5);
   adc_ordinary_channel_set(ADC1, ADC_CHANNEL_4, 4, ADC_SAMPLETIME_71_5);
   adc_ordinary_channel_set(ADC1, ADC_CHANNEL_5, 5, ADC_SAMPLETIME_71_5);
-  /* PA6(ADC_IN6) 若前端阻抗偏高/走线较长，适当拉长采样时间可避免读数偏低(甚至为0) */
-  adc_ordinary_channel_set(ADC1, ADC_CHANNEL_6, 6, ADC_SAMPLETIME_239_5);
+  adc_ordinary_channel_set(ADC1, ADC_CHANNEL_6, 6, ADC_SAMPLETIME_71_5);
   adc_ordinary_channel_set(ADC1, ADC_CHANNEL_9, 7, ADC_SAMPLETIME_71_5);
 
   /* When "ADCx_ORDINARY_TRIG_SOFTWARE" is selected, user can only use software trigger. \
