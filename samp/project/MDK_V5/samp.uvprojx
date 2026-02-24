@@ -861,6 +861,11 @@
               <FileType>1</FileType>
               <FilePath>../../middlewares/bsp/app_screen.c</FilePath>
             </File>
+            <File>
+              <FileName>app_modbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_modbus.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

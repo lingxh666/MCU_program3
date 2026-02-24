@@ -30,6 +30,7 @@
 #include "app_sampling.h"
 #include "app_screen.h"
 #include "bsp_timer.h"
+#include "app_modbus.h"
 #include <string.h>
 /* add user code end private includes */
 
@@ -445,22 +446,33 @@ void my_task03_func(void *pvParameters)
 void my_task04_func(void *pvParameters)
 {
   vTaskDelay(pdMS_TO_TICKS(1000));
+
+  /* 初始化Modbus从站（默认大岳协议，地址1） */
+  modbus_init(PROTO_DAYUE, 1);
   printf("[Task04] 数采仪/Modbus通信任务启动\r\n");
 
   static uint8_t rx_buf[UART_DMA_BUF_SIZE];
+  static uint8_t tx_buf[UART_DMA_BUF_SIZE];
 
   for (;;)
   {
-    /* 1. 轮询数采仪UART接收数据 */
+    /* 1. 同步系统状态到Modbus输入寄存器 */
+    modbus_sync_status();
+
+    /* 2. 轮询数采仪UART接收数据 */
     if (bsp_uart_rx_available(UART_PORT_COLLECTOR)) {
       uint16_t len = bsp_uart_get_rxdata(UART_PORT_COLLECTOR,
                                           rx_buf, sizeof(rx_buf));
       if (len > 0) {
-        /* Modbus协议解析与应答 (Batch 6 app_modbus实现) */
+        uint16_t resp_len = modbus_poll(rx_buf, len,
+                                         tx_buf, sizeof(tx_buf));
+        if (resp_len > 0) {
+          bsp_uart_send(UART_PORT_COLLECTOR, tx_buf, resp_len);
+        }
       }
     }
 
-    /* 2. 心跳上报 */
+    /* 3. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK04_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(50));
