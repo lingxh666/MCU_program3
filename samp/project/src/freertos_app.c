@@ -33,6 +33,7 @@
 #include "app_modbus.h"
 #include "app_adc_module.h"
 #include "app_scheduler.h"
+#include "app_retain_judge.h"
 #include <string.h>
 /* add user code end private includes */
 
@@ -77,7 +78,7 @@ volatile uint32_t g_tmr4_milliseconds = 0;
 
 /* private function prototypes --------------------------------------------*/
 /* add user code begin function prototypes */
-
+static void handle_retain_and_drain(uint8_t bucket);
 /* add user code end function prototypes */
 
 /* private user code ---------------------------------------------------------*/
@@ -478,7 +479,21 @@ void my_task04_func(void *pvParameters)
       }
     }
 
-    /* 3. 心跳上报 */
+    /* 3. 留样判定通知处理 */
+    {
+        uint32_t notify_value = 0;
+        if (xTaskNotifyWait(0, 0xFFFFFFFF, &notify_value, 0) == pdTRUE) {
+            if (notify_value == 0xFF) {
+                drain_execute_blocking(0);
+                drain_execute_blocking(1);
+            } else {
+                uint8_t bucket = (uint8_t)(notify_value - 1);
+                handle_retain_and_drain(bucket);
+            }
+        }
+    }
+
+    /* 4. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK04_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(50));
@@ -645,6 +660,32 @@ void notify_task4_delivery_complete(uint8_t bucket_id)
     uint32_t value = (bucket_id == 0xFF) ? 0xFF : (uint32_t)(bucket_id + 1);
     xTaskNotify(my_task04_handle, value, eSetValueWithOverwrite);
     printf("[调度器] 通知Task04: value=%lu\r\n", (unsigned long)value);
+}
+
+static void handle_retain_and_drain(uint8_t bucket)
+{
+    uint32_t window_start = g_tmr2_seconds;
+    uint32_t delay_sec = 20 * 60;
+    uint32_t window_sec = g_sampling_cfg.analysis_time_min * 60;
+    uint8_t should_retain = 0;
+
+    while (g_tmr2_seconds - window_start < window_sec) {
+        if (g_tmr2_seconds - window_start >= delay_sec) {
+            if (retain_judge_commit(bucket, g_tmr2_seconds)) {
+                should_retain = 1;
+                break;
+            }
+        }
+        xEventGroupSetBits(my_event01_handle, TASK04_HB_BIT);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    if (should_retain) {
+        retention_execute(bucket, g_tmr2_seconds);
+    } else {
+        drain_execute_blocking(bucket);
+    }
+    retain_judge_reset_state();
 }
 
 /* add user code end 2 */
