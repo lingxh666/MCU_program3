@@ -403,7 +403,7 @@ void my_task02_func(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(500));
     printf("[基线] 全部关闭:\r\n");
     for(int i = 0; i < ch_count; i++)
-      printf("  %s: %.1f mA\r\n", ch_tag[i], adc1_get_current_ma(all_ch[i]));
+      printf("  %s: raw=%u  %.1f mA\r\n", ch_tag[i], adc1_get_raw(all_ch[i]), adc1_get_current_ma(all_ch[i]));
 
     /* 逐路测试 */
     for(int t = 0; t < map_count; t++) {
@@ -419,7 +419,7 @@ void my_task02_func(void *pvParameters)
       for(int i = 0; i < ch_count; i++) {
         float ma = adc1_get_current_ma(all_ch[i]);
         const char *mark = (all_ch[i] == map[t].adc_ch) ? " <--目标" : "";
-        printf("  %s: %.1f mA%s\r\n", ch_tag[i], ma, mark);
+        printf("  %s: raw=%u  %.1f mA%s\r\n", ch_tag[i], adc1_get_raw(all_ch[i]), ma, mark);
       }
 
       if(map[t].is_motor)
