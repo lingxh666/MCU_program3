@@ -28,6 +28,7 @@
 #include "cdc_class.h"
 #include "app_config.h"
 #include "app_sampling.h"
+#include "bsp_timer.h"
 #include <string.h>
 /* add user code end private includes */
 
@@ -63,6 +64,10 @@
 
 /* private variables ---------------------------------------------------------*/
 /* add user code begin private variables */
+
+/* 硬件定时器全局计数器（TMR2 ISR 每秒++，TMR4 ISR 每毫秒++） */
+volatile uint32_t g_tmr2_seconds = 0;
+volatile uint32_t g_tmr4_milliseconds = 0;
 
 /* add user code end private variables */
 
@@ -521,11 +526,10 @@ void my_task07_func(void *pvParameters)
 
     /* 2. KVDB脏数据定时刷写（每30秒） */
     {
-      static uint32_t last_flush = 0;
-      uint32_t now = xTaskGetTickCount();
-      if ((now - last_flush) >= pdMS_TO_TICKS(30000)) {
+      static uint32_t last_flush_sec = 0;
+      if ((g_tmr2_seconds - last_flush_sec) >= 30) {
         cfg_save_all();
-        last_flush = now;
+        last_flush_sec = g_tmr2_seconds;
       }
     }
 

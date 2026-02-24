@@ -35,6 +35,7 @@
 #include "bsp_uart.h"
 #include "bsp_can_motor.h"
 #include "bsp_wiegand.h"
+#include "bsp_timer.h"
 /* add user code end private includes */
 
 /* private typedef -----------------------------------------------------------*/
@@ -224,6 +225,7 @@ void TMR2_GLOBAL_IRQHandler(void)
     /* add user code begin TMR2_TMR_OVF_FLAG */
     /* clear flag */
     tmr_flag_clear(TMR2, TMR_OVF_FLAG);
+    g_tmr2_seconds++;  /* 1s 秒级计数器 */
     /* add user code end TMR2_TMR_OVF_FLAG */
   }
 
@@ -274,6 +276,7 @@ void TMR4_GLOBAL_IRQHandler(void)
     /* add user code begin TMR4_TMR_OVF_FLAG */
     /* clear flag */
     tmr_flag_clear(TMR4, TMR_OVF_FLAG);
+    g_tmr4_milliseconds++;  /* 1ms 毫秒级计数器 */
     /* add user code end TMR4_TMR_OVF_FLAG */
   }
 
