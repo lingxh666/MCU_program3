@@ -447,13 +447,20 @@ void my_task04_func(void *pvParameters)
   vTaskDelay(pdMS_TO_TICKS(1000));
   printf("[Task04] 数采仪/Modbus通信任务启动\r\n");
 
+  static uint8_t rx_buf[UART_DMA_BUF_SIZE];
+
   for (;;)
   {
-    /* 1. 从Queue02取数采仪接收数据 (Batch 6 实现) */
+    /* 1. 轮询数采仪UART接收数据 */
+    if (bsp_uart_rx_available(UART_PORT_COLLECTOR)) {
+      uint16_t len = bsp_uart_get_rxdata(UART_PORT_COLLECTOR,
+                                          rx_buf, sizeof(rx_buf));
+      if (len > 0) {
+        /* Modbus协议解析与应答 (Batch 6 app_modbus实现) */
+      }
+    }
 
-    /* 2. Modbus协议解析与应答 (Batch 6 实现) */
-
-    /* 3. 心跳上报 */
+    /* 2. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK04_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(50));
@@ -471,13 +478,20 @@ void my_task05_func(void *pvParameters)
   vTaskDelay(pdMS_TO_TICKS(3000));  /* 等待4G模块上电 */
   printf("[Task05] 4G模块通信任务启动\r\n");
 
+  static uint8_t rx_buf[UART_DMA_BUF_SIZE];
+
   for (;;)
   {
-    /* 1. 从Queue03取4G接收数据 (后续实现) */
+    /* 1. 轮询4G模块UART接收数据 */
+    if (bsp_uart_rx_available(UART_PORT_4G)) {
+      uint16_t len = bsp_uart_get_rxdata(UART_PORT_4G,
+                                          rx_buf, sizeof(rx_buf));
+      if (len > 0) {
+        /* AT指令应答解析 (后续实现) */
+      }
+    }
 
-    /* 2. AT指令交互 (后续实现) */
-
-    /* 3. 心跳上报 */
+    /* 2. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK05_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(100));
@@ -526,8 +540,12 @@ void my_task06_func(void *pvParameters)
 void my_task07_func(void *pvParameters)
 {
   bsp_wdt_enable();
+  bsp_pvm_init();
   vTaskDelay(pdMS_TO_TICKS(2000));
-  printf("[Task07] 系统管理任务启动 (WDT已启用)\r\n");
+
+  uint32_t pvm_count = bsp_pvm_get_count();
+  printf("[Task07] 系统管理任务启动 (WDT已启用, 历史掉电%u次)\r\n",
+         (unsigned int)pvm_count);
 
   for (;;)
   {
@@ -537,6 +555,8 @@ void my_task07_func(void *pvParameters)
         pdMS_TO_TICKS(5000));
     if ((bits & ALL_HB_BITS) == ALL_HB_BITS) {
       bsp_wdt_feed();
+    } else {
+      printf("[Task07] 心跳超时! bits=0x%02X\r\n", (unsigned int)bits);
     }
 
     /* 2. KVDB脏数据定时刷写（每30秒） */
@@ -548,7 +568,16 @@ void my_task07_func(void *pvParameters)
       }
     }
 
-    /* 3. 心跳上报 */
+    /* 3. 掉电次数变化检测 */
+    {
+      uint32_t cur = bsp_pvm_get_count();
+      if (cur != pvm_count) {
+        printf("[Task07] 检测到掉电! 累计%u次\r\n", (unsigned int)cur);
+        pvm_count = cur;
+      }
+    }
+
+    /* 4. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK07_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(1000));
