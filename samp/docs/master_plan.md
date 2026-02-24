@@ -265,14 +265,20 @@
 
 **文件:** `bsp_adc_current.h` / `bsp_adc_current.c`
 
-ADC1 配置为 DMA 循环扫描模式，持续采集10个通道的继电器/阀门电流：
+ADC1 配置为 DMA 循环扫描模式，持续采集12个通道（9路电流 + 2.5V基准 + 2路NTC温度）：
 
-需实现：
-- ADC1 改为 DMA 循环扫描模式（当前是单次转换，需修改 `wk_adc1_init()`）
-- DMA 双缓冲或环形缓冲，存储10通道原始值
-- `adc_current_get(channel)` 获取指定通道的滤波后电流值（mA）
-- `adc_current_is_active(channel)` 判断阀门是否正常通电
-- 结合 D07 的 2.5V 基准校准结果修正 ADC 值
+硬件参数（继电器电流检测）：
+- 电流采样电阻：0.2Ω (200mΩ)
+- 放大器：INA180A2IDBVR，增益 50V/V
+- 公式：V_adc = I × 0.2 × 50 = I × 10，即 I(mA) = V_adc × 100
+- 100mA → 1.0V，200mA → 2.0V，330mA → 3.3V（满量程）
+
+已实现：
+- ADC1 DMA 循环扫描模式，DMA2_CHANNEL1，环形缓冲 `adc1_dma_buf[8][12]`
+- `adc1_get_raw(ch)` 获取8次平均原始值
+- `adc1_get_current_ma(ch)` 返回校准后电流值（mA）
+- 2.5V 基准校准集成（`adc_cal_apply()`）
+- `bsp_adc1_dma_start()` 在 main.c 中调用启动DMA连续采样
 
 **通道映射：** CH0(基准), CH2(瓶电机), CH3(出水阀A), CH4(B搅拌), CH5(A搅拌), CH6(B排水), CH7(A排水), CH10(进水阀), CH11(瞬时阀), CH14(送留样阀)
 
@@ -833,7 +839,7 @@ samp/
 | D01 | GPIO 输出驱动（继电器/阀门） | ✅ 已完成 | bsp_io.h/c |
 | D02 | GPIO 输出驱动（H桥瓶排空电机） | ✅ 已完成 | bsp_io.h/c |
 | D03 | GPIO 输入驱动（液位/触发/拨码/锁） | ✅ 已完成 | bsp_io.h/c |
-| D04 | ADC1 DMA 连续扫描驱动（电流监测） | ✅ 已完成 | bsp_adc.h/c |
+| D04 | ADC1 DMA 连续扫描驱动（电流监测） | ✅ 已完成 | bsp_adc.h/c, INA180A2 R=0.2Ω Gain=50 |
 | D05 | ADC1 按需转换驱动（4-20mA） | ✅ 已完成 | bsp_adc.h/c |
 | D06 | ADC2 DMA 连续扫描驱动（NTC温度） | ✅ 已完成 | bsp_adc.h/c |
 | D07 | ADC 校准模块（2.5V基准） | ✅ 已完成 | bsp_adc.h/c |
@@ -928,11 +934,49 @@ samp/
 
 **编译结果：** 0错误0警告，Code=47514
 
+#### 会话4-7 — 批次2-5驱动（D09-D17/D24-D25）
+
+详见 Serena memory `driver_test_progress`，共完成27项驱动测试（S01-S27），全部PASS。
+
+**关键新增文件：**
+- `middlewares/bsp/bsp_uart.h/c` — 统一UART驱动（DMA+空闲中断，7路复用）
+- `middlewares/bsp/bsp_screen.h/c` — 迪文串口屏协议驱动
+- `middlewares/bsp/bsp_can_motor.h/c` — CAN电机控制驱动（4电机+RX环形缓冲）
+- `middlewares/bsp/bsp_wiegand.h/c` — Wiegand 26/34门禁驱动
+- `middlewares/bsp/bsp_pvm.h/c` — 电源电压监测
+
+**关键修复：**
+- bsp_io.c: 继电器逻辑反转（HIGH=OFF, LOW=ON）
+- bsp_io.c: H桥电机逻辑反转（STOP=双HIGH）
+- wk_config.c: LEXT超时死循环
+- bsp_qspi_flash.c: read改用XIP内存映射，write加TXFIFORDY等待
+
+#### 会话8 — S11电流通道测试与ADC修复
+
+**问题诊断：**
+- S11测试所有电流通道raw=0，万用表确认有150mA电流流过
+- 排查发现硬件问题：INA180A2 IN+/IN-接反（PCB设计错误），已修改原理图并飞线修复
+- 排查发现软件问题：`bsp_adc1_dma_start()` 从未被调用，ADC1 DMA未启动
+
+**修改文件：**
+- `middlewares/bsp/bsp_adc.c`: 电流计算参数从 R=0.1/Gain=20 改为 R=0.2/Gain=50
+- `project/src/main.c`: 添加 `#include "bsp_adc.h"` 和 `bsp_adc1_dma_start()` 调用
+- `project/src/freertos_app.c`: S11测试等待时间2s→10s，添加raw值打印
+
+**测试结果：** S11 PASS，所有电流通道正常检测
+
+**编译结果：** 0错误0警告，Code=54792
+
 ### 待续工作
 
-1. **D25 Flash写入逻辑** — OTA升级的实际Flash写入，需先确定Flash分区规划
-2. **D26 Bootloader** — 独立Bootloader工程，配合OTA升级
-3. **其余驱动开发** — D08-D17, D22-D23, D27-D28
+**第一阶段剩余：**
+1. **D26 Bootloader/OTA** — 独立Bootloader工程 + D25 Flash写入逻辑
+2. **D28 Modbus协议栈** — 多区域变体（大岳/大湖/四川/西安）
+
+**第二阶段：业务逻辑重构**
+3. **freertos_app.c 重构** — 当前为测试代码，需重构为正式业务任务架构
+4. **业务流程实现** — 采样/送样/留样/瞬时/排水等核心流程状态机
+5. **串口屏交互** — 迪文屏页面逻辑与数据绑定
 
 ---
 
