@@ -363,8 +363,76 @@ void my_task01_func(void *pvParameters)
   */
 void my_task02_func(void *pvParameters)
 {
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  while(1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
+  /* S11 电流通道测试 - 逐路开阀验证ADC电流与阀对应关系 */
+  static const struct {
+    adc1_ch_index_t adc_ch;
+    relay_id_t      relay_id;
+    const char     *name;
+    uint8_t         is_motor;
+  } map[] = {
+    { ADC_CH_BOTTLE_MOTOR,   (relay_id_t)0,        "瓶排空电机", 1 },
+    { ADC_CH_OUTLET_VALVE_A, RELAY_OUTLET_VALVE_A, "出水阀A",    0 },
+    { ADC_CH_STIR_B,         RELAY_STIR_B,         "B搅拌",      0 },
+    { ADC_CH_STIR_A,         RELAY_STIR_A,         "A搅拌",      0 },
+    { ADC_CH_DRAIN_B,        RELAY_DRAIN_B,        "B排水",      0 },
+    { ADC_CH_DRAIN_A,        RELAY_DRAIN_A,        "A排水",      0 },
+    { ADC_CH_INLET_VALVE,    RELAY_INLET_VALVE,    "进水阀",     0 },
+    { ADC_CH_INSTANT_VALVE,  RELAY_INSTANT_VALVE,  "瞬时阀",     0 },
+    { ADC_CH_DELIVER_VALVE,  RELAY_DELIVER_VALVE,  "送留样阀",   0 },
+  };
+  static const adc1_ch_index_t all_ch[] = {
+    ADC_CH_BOTTLE_MOTOR, ADC_CH_OUTLET_VALVE_A, ADC_CH_STIR_B,
+    ADC_CH_STIR_A, ADC_CH_DRAIN_B, ADC_CH_DRAIN_A,
+    ADC_CH_INLET_VALVE, ADC_CH_INSTANT_VALVE, ADC_CH_DELIVER_VALVE,
+  };
+  static const char *ch_tag[] = {
+    "瓶电机", "出水A", "搅拌B", "搅拌A", "排水B", "排水A", "进水", "瞬时", "送留样"
+  };
+  const int ch_count = 9;
+  const int map_count = sizeof(map) / sizeof(map[0]);
+
+  static int round = 0;
+  vTaskDelay(pdMS_TO_TICKS(3000));
+
+  while(1) {
+    printf("\r\n===== S11 电流通道测试 第%d轮 =====\r\n", ++round);
+
+    /* 基线：全部关闭 */
+    relay_all_off();
+    bottle_motor_set(MOTOR_STOP);
+    vTaskDelay(pdMS_TO_TICKS(500));
+    printf("[基线] 全部关闭:\r\n");
+    for(int i = 0; i < ch_count; i++)
+      printf("  %s: %.1f mA\r\n", ch_tag[i], adc1_get_current_ma(all_ch[i]));
+
+    /* 逐路测试 */
+    for(int t = 0; t < map_count; t++) {
+      printf("\r\n--- [%d/%d] %s ---\r\n", t + 1, map_count, map[t].name);
+
+      if(map[t].is_motor)
+        bottle_motor_set(MOTOR_EMPTY);
+      else
+        relay_set(map[t].relay_id, 1);
+
+      vTaskDelay(pdMS_TO_TICKS(10000));
+
+      for(int i = 0; i < ch_count; i++) {
+        float ma = adc1_get_current_ma(all_ch[i]);
+        const char *mark = (all_ch[i] == map[t].adc_ch) ? " <--目标" : "";
+        printf("  %s: %.1f mA%s\r\n", ch_tag[i], ma, mark);
+      }
+
+      if(map[t].is_motor)
+        bottle_motor_set(MOTOR_STOP);
+      else
+        relay_set(map[t].relay_id, 0);
+
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    printf("\r\n===== 第%d轮完成 =====\r\n", round);
+    vTaskDelay(pdMS_TO_TICKS(3000));
+  }
 }
 
 
