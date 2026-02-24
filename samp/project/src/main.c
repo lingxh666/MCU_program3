@@ -36,6 +36,7 @@
 #include "bsp_uart.h"
 #include "bsp_can_motor.h"
 #include "bsp_wiegand.h"
+#include "bsp_adc.h"
 /* add user code end private includes */
 
 /* private typedef -----------------------------------------------------------*/
@@ -267,6 +268,7 @@ int main(void)
   bsp_uart_init();
   can_motor_init();
   wiegand_init();
+  bsp_adc1_dma_start();   /* 启动ADC1 DMA连续采样 */
   /* add user code end 2 */
 
   /* init freertos function. */
