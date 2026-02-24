@@ -32,6 +32,7 @@
 #include "bsp_timer.h"
 #include "app_modbus.h"
 #include "app_adc_module.h"
+#include "app_scheduler.h"
 #include <string.h>
 /* add user code end private includes */
 
@@ -380,6 +381,7 @@ void my_task02_func(void *pvParameters)
 {
   /* 上电初始化：加载配置 */
   cfg_init_load();
+  scheduler_init((sched_mode_t)g_sampling_cfg.mode);
   vTaskDelay(pdMS_TO_TICKS(1000));  /* 等待外设就绪 */
   printf("[Task02] 采样主控任务启动\r\n");
 
@@ -397,7 +399,10 @@ void my_task02_func(void *pvParameters)
     /* 4. 推进排水状态机 */
     drain_step();
 
-    /* 5. 周期调度逻辑 (Batch 5 实现) */
+    /* 5. 周期调度逻辑 */
+    if (g_state.running) {
+        scheduler_run();
+    }
 
     /* 6. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK02_HB_BIT);
@@ -633,6 +638,14 @@ void my_task08_func(void *pvParameters)
 
 
 /* add user code begin 2 */
+
+/* 送样完成通知Task04（由调度器调用） */
+void notify_task4_delivery_complete(uint8_t bucket_id)
+{
+    uint32_t value = (bucket_id == 0xFF) ? 0xFF : (uint32_t)(bucket_id + 1);
+    xTaskNotify(my_task04_handle, value, eSetValueWithOverwrite);
+    printf("[调度器] 通知Task04: value=%lu\r\n", (unsigned long)value);
+}
 
 /* add user code end 2 */
 

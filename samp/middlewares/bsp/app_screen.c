@@ -9,6 +9,7 @@
 #include "bsp_screen.h"
 #include "app_config.h"
 #include "app_sampling.h"
+#include "app_scheduler.h"
 #include <stdio.h>
 
 /* ======================== 命令环形缓冲区 ======================== */
@@ -57,10 +58,13 @@ static void screen_handle_command(uint16_t addr, uint16_t value)
             break;
         case SCR_CMD_SYS_START:
             g_state.running = 1;
+            scheduler_init((sched_mode_t)g_sampling_cfg.mode);
+            scheduler_start();
             printf("[屏幕] 系统启动\r\n");
             break;
         case SCR_CMD_SYS_STOP:
             g_state.running = 0;
+            scheduler_stop();
             printf("[屏幕] 系统停止\r\n");
             break;
         case SCR_CMD_SAMP_ABORT:

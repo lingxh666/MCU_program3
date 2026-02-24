@@ -869,7 +869,12 @@
             <File>
               <FileName>app_adc_module.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\middlewares\bsp\app_adc_module.c</FilePath>
+              <FilePath>../../middlewares/bsp/app_adc_module.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_scheduler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_scheduler.c</FilePath>
             </File>
           </Files>
         </Group>
