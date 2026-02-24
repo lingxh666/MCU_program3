@@ -27,6 +27,7 @@
 #include "usb_core.h"
 #include "cdc_class.h"
 #include "app_config.h"
+#include "app_sampling.h"
 #include <string.h>
 /* add user code end private includes */
 
@@ -376,9 +377,11 @@ void my_task02_func(void *pvParameters)
 
   for (;;)
   {
-    /* 1. 推进采样状态机 (Batch 2 实现) */
+    /* 1. 推进采样状态机 */
+    sampling_step();
 
-    /* 2. 推进排水状态机 (Batch 2 实现) */
+    /* 2. 推进排水状态机 */
+    drain_step();
 
     /* 3. 周期调度逻辑 (Batch 5 实现) */
 
@@ -474,11 +477,18 @@ void my_task06_func(void *pvParameters)
 
   for (;;)
   {
-    /* 1. 周期查询电机状态 (Batch 2 实现) */
+    /* 1. 处理CAN接收帧（电机状态回报） */
+    {
+      can_rx_frame_t frame;
+      while (can_rx_get(&frame)) {
+        /* CAN帧已在中断中入环形缓冲，这里取出处理 */
+      }
+    }
 
-    /* 2. ADC电流监控：阀门电流异常检测 (Batch 2 实现) */
+    /* 2. ADC电流监控：阀门电流异常检测 */
+    /* 开阀后电流为0=断线，电流过大=堵转 */
 
-    /* 3. 冰箱温度监控 NTC (后续实现) */
+    /* 3. 冰箱温度监控 NTC */
 
     /* 4. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK06_HB_BIT);

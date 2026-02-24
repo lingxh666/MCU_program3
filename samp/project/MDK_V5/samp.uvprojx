@@ -851,6 +851,11 @@
               <FileType>1</FileType>
               <FilePath>../../middlewares/bsp/app_config.c</FilePath>
             </File>
+            <File>
+              <FileName>app_sampling.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_sampling.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
