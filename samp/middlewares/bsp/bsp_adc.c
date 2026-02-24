@@ -77,13 +77,11 @@ float adc1_get_voltage_mv(adc1_ch_index_t ch)
 
 float adc1_get_current_ma(adc1_ch_index_t ch)
 {
-  /* 继电器电流检测电路：采样电阻上的压降经放大后送入ADC
-   * 具体转换系数需根据实际硬件电路确定
-   * 这里假设：V_adc = I * R_sense * Gain
-   * 默认 R_sense=0.1R, Gain=20 => I = V_adc / (0.1 * 20) = V_adc / 2
-   * 用户需根据实际电路修改此系数 */
+  /* 继电器电流检测电路：INA180A2 增益50V/V, 采样电阻0.2Ω
+   * V_adc = I * R_sense * Gain = I * 0.2 * 50 = I * 10
+   * I = V_adc / 10 */
   float v = adc_cal_apply(adc1_get_raw(ch));
-  return v / 2.0f * 1000.0f;  /* mA */
+  return v * 100.0f;  /* V / 10 * 1000 = mA */
 }
 
 uint8_t adc1_is_active(adc1_ch_index_t ch)
