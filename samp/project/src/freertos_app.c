@@ -31,6 +31,7 @@
 #include "app_screen.h"
 #include "bsp_timer.h"
 #include "app_modbus.h"
+#include "app_adc_module.h"
 #include <string.h>
 /* add user code end private includes */
 
@@ -488,6 +489,10 @@ void my_task04_func(void *pvParameters)
 void my_task05_func(void *pvParameters)
 {
   vTaskDelay(pdMS_TO_TICKS(3000));  /* 等待4G模块上电 */
+
+  /* AD模块初始化 */
+  adc_module_init();
+
   printf("[Task05] 4G模块通信任务启动\r\n");
 
   static uint8_t rx_buf[UART_DMA_BUF_SIZE];
@@ -503,7 +508,10 @@ void my_task05_func(void *pvParameters)
       }
     }
 
-    /* 2. 心跳上报 */
+    /* 2. AD模块数据接收(UART8) */
+    adc_module_poll();
+
+    /* 3. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK05_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(100));

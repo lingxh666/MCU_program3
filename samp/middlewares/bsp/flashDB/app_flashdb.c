@@ -124,8 +124,8 @@ static uint8_t cfg_load(const char *key, void *p, size_t len)
 
 uint8_t cfg_save_sample(const void *p)       { return cfg_save(KV_SAMPLE,   p, 32); }
 uint8_t cfg_load_sample(void *p)             { return cfg_load(KV_SAMPLE,   p, 32); }
-uint8_t cfg_save_delivery(const void *p)     { return cfg_save(KV_DELIVERY, p, 32); }
-uint8_t cfg_load_delivery(void *p)           { return cfg_load(KV_DELIVERY, p, 32); }
+uint8_t cfg_save_delivery(const void *p)     { return cfg_save(KV_DELIVERY, p, 64); }
+uint8_t cfg_load_delivery(void *p)           { return cfg_load(KV_DELIVERY, p, 64); }
 uint8_t cfg_save_retain(const void *p)       { return cfg_save(KV_RETAIN,   p, 32); }
 uint8_t cfg_load_retain(void *p)             { return cfg_load(KV_RETAIN,   p, 32); }
 uint8_t cfg_save_comm(const void *p)         { return cfg_save(KV_COMM,     p, 64); }
