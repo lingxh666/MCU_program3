@@ -856,6 +856,11 @@
               <FileType>1</FileType>
               <FilePath>../../middlewares/bsp/app_sampling.c</FilePath>
             </File>
+            <File>
+              <FileName>app_screen.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_screen.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

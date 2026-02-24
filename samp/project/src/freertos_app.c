@@ -28,6 +28,7 @@
 #include "cdc_class.h"
 #include "app_config.h"
 #include "app_sampling.h"
+#include "app_screen.h"
 #include "bsp_timer.h"
 #include <string.h>
 /* add user code end private includes */
@@ -405,14 +406,22 @@ void my_task02_func(void *pvParameters)
   */
 void my_task03_func(void *pvParameters)
 {
+  screen_task_init();
   vTaskDelay(pdMS_TO_TICKS(500));
   printf("[Task03] 串口屏通信任务启动\r\n");
 
+  static uint32_t last_update_sec = 0;
+
   for (;;)
   {
-    /* 1. 处理屏幕接收数据 (Batch 3 实现) */
+    /* 1. 处理屏幕接收命令（从ISR环形缓冲区取出） */
+    screen_poll_commands();
 
-    /* 2. 周期刷新状态显示 (Batch 3 实现) */
+    /* 2. 周期刷新状态显示（每1秒） */
+    if ((g_tmr2_seconds - last_update_sec) >= 1) {
+      screen_update_status();
+      last_update_sec = g_tmr2_seconds;
+    }
 
     /* 3. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK03_HB_BIT);
