@@ -26,6 +26,7 @@
 #include "bsp_pvm.h"
 #include "usb_core.h"
 #include "cdc_class.h"
+#include "app_config.h"
 #include <string.h>
 /* add user code end private includes */
 
@@ -36,6 +37,21 @@
 
 /* private define ------------------------------------------------------------*/
 /* add user code begin private define */
+
+/* 任务优先级定义（FreeRTOS: 数值越大优先级越高） */
+#define PRIO_BELOW_NORMAL   2
+#define PRIO_NORMAL         3
+#define PRIO_ABOVE_NORMAL   4
+
+/* 任务心跳事件位定义 */
+#define TASK02_HB_BIT  (1 << 0)
+#define TASK03_HB_BIT  (1 << 1)
+#define TASK04_HB_BIT  (1 << 2)
+#define TASK05_HB_BIT  (1 << 3)
+#define TASK06_HB_BIT  (1 << 4)
+#define TASK07_HB_BIT  (1 << 5)
+#define TASK08_HB_BIT  (1 << 6)
+#define ALL_HB_BITS    (0x7F)
 
 /* add user code end private define */
 
@@ -131,68 +147,68 @@ void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer, StackT
   */
 void freertos_task_create(void)
 {
-  /* create my_task01 task */
+  /* create my_task01 task — USB (CDC Device + MSC Host OTA) */
   xTaskCreate(my_task01_func,
-              "my_task01",
-              128,
-              NULL,
-              0,
-              &my_task01_handle);
-
-  /* create my_task02 task */
-  xTaskCreate(my_task02_func,
-              "my_task02",
+              "task01_usb",
               512,
               NULL,
-              0,
+              PRIO_NORMAL,
+              &my_task01_handle);
+
+  /* create my_task02 task — 采样/送样/留样主控状态机 */
+  xTaskCreate(my_task02_func,
+              "task02_samp",
+              1024,
+              NULL,
+              PRIO_ABOVE_NORMAL,
               &my_task02_handle);
 
-  /* create my_task03 task */
+  /* create my_task03 task — 串口屏通信与命令处理 */
   xTaskCreate(my_task03_func,
-              "my_task03",
-              128,
+              "task03_scr",
+              512,
               NULL,
-              0,
+              PRIO_ABOVE_NORMAL,
               &my_task03_handle);
 
-  /* create my_task04 task */
+  /* create my_task04 task — 数采仪/Modbus通信 */
   xTaskCreate(my_task04_func,
-              "my_task04",
-              128,
+              "task04_mbus",
+              512,
               NULL,
-              0,
+              PRIO_NORMAL,
               &my_task04_handle);
 
-  /* create my_task05 task */
+  /* create my_task05 task — 4G模块通信 */
   xTaskCreate(my_task05_func,
-              "my_task05",
-              128,
+              "task05_4g",
+              512,
               NULL,
-              0,
+              PRIO_NORMAL,
               &my_task05_handle);
 
-  /* create my_task06 task */
+  /* create my_task06 task — CAN电机控制 + ADC监控 */
   xTaskCreate(my_task06_func,
-              "my_task06",
-              128,
+              "task06_can",
+              256,
               NULL,
-              0,
+              PRIO_ABOVE_NORMAL,
               &my_task06_handle);
 
-  /* create my_task07 task */
+  /* create my_task07 task — 系统管理 (WDT/KVDB刷写) */
   xTaskCreate(my_task07_func,
-              "my_task07",
-              128,
+              "task07_sys",
+              256,
               NULL,
-              0,
+              PRIO_BELOW_NORMAL,
               &my_task07_handle);
 
-  /* create my_task08 task */
+  /* create my_task08 task — 心跳/刷卡/备用 */
   xTaskCreate(my_task08_func,
-              "my_task08",
-              128,
+              "task08_aux",
+              256,
               NULL,
-              0,
+              PRIO_BELOW_NORMAL,
               &my_task08_handle);
 }
 
@@ -329,29 +345,19 @@ void wk_freertos_init(void)
   */
 void my_task01_func(void *pvParameters)
 {
-  /* add user code begin my_task01_func 0 */
-
-  /* add user code end my_task01_func 0 */
-
-  /* init usb app function. */
+  /* USB初始化 */
   wk_usb_app_init();
 
-  /* add user code begin my_task01_func 2 */
+  /* 检查是否看门狗复位 */
+  if (bsp_wdt_is_reset()) {
+    printf("[Task01] 检测到看门狗复位\r\n");
+  }
 
-  /* add user code end my_task01_func 2 */
-
-  /* Infinite loop */
-  while(1)
+  for (;;)
   {
-    /* when use usb,the function wk_usb_app_task() will be generated,
-       which is the usb application layer code that users can improve themselves */
+    /* USB CDC + MSC Host 轮询 */
     wk_usb_app_task();
-
-  /* add user code begin my_task01_func 1 */
-
-     vTaskDelay(1);
-
-  /* add user code end my_task01_func 1 */
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
@@ -363,75 +369,23 @@ void my_task01_func(void *pvParameters)
   */
 void my_task02_func(void *pvParameters)
 {
-  /* S11 电流通道测试 - 逐路开阀验证ADC电流与阀对应关系 */
-  static const struct {
-    adc1_ch_index_t adc_ch;
-    relay_id_t      relay_id;
-    const char     *name;
-    uint8_t         is_motor;
-  } map[] = {
-    { ADC_CH_BOTTLE_MOTOR,   (relay_id_t)0,        "瓶排空电机", 1 },
-    { ADC_CH_OUTLET_VALVE_A, RELAY_OUTLET_VALVE_A, "出水阀A",    0 },
-    { ADC_CH_STIR_B,         RELAY_STIR_B,         "B搅拌",      0 },
-    { ADC_CH_STIR_A,         RELAY_STIR_A,         "A搅拌",      0 },
-    { ADC_CH_DRAIN_B,        RELAY_DRAIN_B,        "B排水",      0 },
-    { ADC_CH_DRAIN_A,        RELAY_DRAIN_A,        "A排水",      0 },
-    { ADC_CH_INLET_VALVE,    RELAY_INLET_VALVE,    "进水阀",     0 },
-    { ADC_CH_INSTANT_VALVE,  RELAY_INSTANT_VALVE,  "瞬时阀",     0 },
-    { ADC_CH_DELIVER_VALVE,  RELAY_DELIVER_VALVE,  "送留样阀",   0 },
-  };
-  static const adc1_ch_index_t all_ch[] = {
-    ADC_CH_BOTTLE_MOTOR, ADC_CH_OUTLET_VALVE_A, ADC_CH_STIR_B,
-    ADC_CH_STIR_A, ADC_CH_DRAIN_B, ADC_CH_DRAIN_A,
-    ADC_CH_INLET_VALVE, ADC_CH_INSTANT_VALVE, ADC_CH_DELIVER_VALVE,
-  };
-  static const char *ch_tag[] = {
-    "瓶电机", "出水A", "搅拌B", "搅拌A", "排水B", "排水A", "进水", "瞬时", "送留样"
-  };
-  const int ch_count = 9;
-  const int map_count = sizeof(map) / sizeof(map[0]);
+  /* 上电初始化：加载配置 */
+  cfg_init_load();
+  vTaskDelay(pdMS_TO_TICKS(1000));  /* 等待外设就绪 */
+  printf("[Task02] 采样主控任务启动\r\n");
 
-  static int round = 0;
-  vTaskDelay(pdMS_TO_TICKS(3000));
+  for (;;)
+  {
+    /* 1. 推进采样状态机 (Batch 2 实现) */
 
-  while(1) {
-    printf("\r\n===== S11 电流通道测试 第%d轮 =====\r\n", ++round);
+    /* 2. 推进排水状态机 (Batch 2 实现) */
 
-    /* 基线：全部关闭 */
-    relay_all_off();
-    bottle_motor_set(MOTOR_STOP);
-    vTaskDelay(pdMS_TO_TICKS(500));
-    printf("[基线] 全部关闭:\r\n");
-    for(int i = 0; i < ch_count; i++)
-      printf("  %s: raw=%u  %.1f mA\r\n", ch_tag[i], adc1_get_raw(all_ch[i]), adc1_get_current_ma(all_ch[i]));
+    /* 3. 周期调度逻辑 (Batch 5 实现) */
 
-    /* 逐路测试 */
-    for(int t = 0; t < map_count; t++) {
-      printf("\r\n--- [%d/%d] %s ---\r\n", t + 1, map_count, map[t].name);
+    /* 4. 心跳上报 */
+    xEventGroupSetBits(my_event01_handle, TASK02_HB_BIT);
 
-      if(map[t].is_motor)
-        bottle_motor_set(MOTOR_EMPTY);
-      else
-        relay_set(map[t].relay_id, 1);
-
-      vTaskDelay(pdMS_TO_TICKS(10000));
-
-      for(int i = 0; i < ch_count; i++) {
-        float ma = adc1_get_current_ma(all_ch[i]);
-        const char *mark = (all_ch[i] == map[t].adc_ch) ? " <--目标" : "";
-        printf("  %s: raw=%u  %.1f mA%s\r\n", ch_tag[i], adc1_get_raw(all_ch[i]), ma, mark);
-      }
-
-      if(map[t].is_motor)
-        bottle_motor_set(MOTOR_STOP);
-      else
-        relay_set(map[t].relay_id, 0);
-
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-
-    printf("\r\n===== 第%d轮完成 =====\r\n", round);
-    vTaskDelay(pdMS_TO_TICKS(3000));
+    vTaskDelay(pdMS_TO_TICKS(50));  /* 50ms轮询周期 */
   }
 }
 
@@ -443,22 +397,19 @@ void my_task02_func(void *pvParameters)
   */
 void my_task03_func(void *pvParameters)
 {
-  /* add user code begin my_task03_func 0 */
+  vTaskDelay(pdMS_TO_TICKS(500));
+  printf("[Task03] 串口屏通信任务启动\r\n");
 
-  /* add user code end my_task03_func 0 */
-
-  /* add user code begin my_task03_func 2 */
-
-  /* add user code end my_task03_func 2 */
-
-  /* Infinite loop */
-  while(1)
+  for (;;)
   {
-  /* add user code begin my_task03_func 1 */
+    /* 1. 处理屏幕接收数据 (Batch 3 实现) */
 
-     vTaskDelay(1);
+    /* 2. 周期刷新状态显示 (Batch 3 实现) */
 
-  /* add user code end my_task03_func 1 */
+    /* 3. 心跳上报 */
+    xEventGroupSetBits(my_event01_handle, TASK03_HB_BIT);
+
+    vTaskDelay(pdMS_TO_TICKS(20));  /* 20ms轮询 */
   }
 }
 
@@ -470,22 +421,19 @@ void my_task03_func(void *pvParameters)
   */
 void my_task04_func(void *pvParameters)
 {
-  /* add user code begin my_task04_func 0 */
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  printf("[Task04] 数采仪/Modbus通信任务启动\r\n");
 
-  /* add user code end my_task04_func 0 */
-
-  /* add user code begin my_task04_func 2 */
-
-  /* add user code end my_task04_func 2 */
-
-  /* Infinite loop */
-  while(1)
+  for (;;)
   {
-  /* add user code begin my_task04_func 1 */
+    /* 1. 从Queue02取数采仪接收数据 (Batch 6 实现) */
 
-     vTaskDelay(1);
+    /* 2. Modbus协议解析与应答 (Batch 6 实现) */
 
-  /* add user code end my_task04_func 1 */
+    /* 3. 心跳上报 */
+    xEventGroupSetBits(my_event01_handle, TASK04_HB_BIT);
+
+    vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
 
@@ -497,22 +445,19 @@ void my_task04_func(void *pvParameters)
   */
 void my_task05_func(void *pvParameters)
 {
-  /* add user code begin my_task05_func 0 */
+  vTaskDelay(pdMS_TO_TICKS(3000));  /* 等待4G模块上电 */
+  printf("[Task05] 4G模块通信任务启动\r\n");
 
-  /* add user code end my_task05_func 0 */
-
-  /* add user code begin my_task05_func 2 */
-
-  /* add user code end my_task05_func 2 */
-
-  /* Infinite loop */
-  while(1)
+  for (;;)
   {
-  /* add user code begin my_task05_func 1 */
+    /* 1. 从Queue03取4G接收数据 (后续实现) */
 
-     vTaskDelay(1);
+    /* 2. AT指令交互 (后续实现) */
 
-  /* add user code end my_task05_func 1 */
+    /* 3. 心跳上报 */
+    xEventGroupSetBits(my_event01_handle, TASK05_HB_BIT);
+
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
@@ -524,22 +469,21 @@ void my_task05_func(void *pvParameters)
   */
 void my_task06_func(void *pvParameters)
 {
-  /* add user code begin my_task06_func 0 */
+  vTaskDelay(pdMS_TO_TICKS(500));
+  printf("[Task06] CAN电机控制+ADC监控任务启动\r\n");
 
-  /* add user code end my_task06_func 0 */
-
-  /* add user code begin my_task06_func 2 */
-
-  /* add user code end my_task06_func 2 */
-
-  /* Infinite loop */
-  while(1)
+  for (;;)
   {
-  /* add user code begin my_task06_func 1 */
+    /* 1. 周期查询电机状态 (Batch 2 实现) */
 
-     vTaskDelay(1);
+    /* 2. ADC电流监控：阀门电流异常检测 (Batch 2 实现) */
 
-  /* add user code end my_task06_func 1 */
+    /* 3. 冰箱温度监控 NTC (后续实现) */
+
+    /* 4. 心跳上报 */
+    xEventGroupSetBits(my_event01_handle, TASK06_HB_BIT);
+
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 
@@ -551,22 +495,34 @@ void my_task06_func(void *pvParameters)
   */
 void my_task07_func(void *pvParameters)
 {
-  /* add user code begin my_task07_func 0 */
+  bsp_wdt_enable();
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  printf("[Task07] 系统管理任务启动 (WDT已启用)\r\n");
 
-  /* add user code end my_task07_func 0 */
-
-  /* add user code begin my_task07_func 2 */
-
-  /* add user code end my_task07_func 2 */
-
-  /* Infinite loop */
-  while(1)
+  for (;;)
   {
-  /* add user code begin my_task07_func 1 */
+    /* 1. 喂狗（检查所有任务心跳） */
+    EventBits_t bits = xEventGroupWaitBits(
+        my_event01_handle, ALL_HB_BITS, pdTRUE, pdTRUE,
+        pdMS_TO_TICKS(5000));
+    if ((bits & ALL_HB_BITS) == ALL_HB_BITS) {
+      bsp_wdt_feed();
+    }
 
-     vTaskDelay(1);
+    /* 2. KVDB脏数据定时刷写（每30秒） */
+    {
+      static uint32_t last_flush = 0;
+      uint32_t now = xTaskGetTickCount();
+      if ((now - last_flush) >= pdMS_TO_TICKS(30000)) {
+        cfg_save_all();
+        last_flush = now;
+      }
+    }
 
-  /* add user code end my_task07_func 1 */
+    /* 3. 心跳上报 */
+    xEventGroupSetBits(my_event01_handle, TASK07_HB_BIT);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
@@ -578,22 +534,22 @@ void my_task07_func(void *pvParameters)
   */
 void my_task08_func(void *pvParameters)
 {
-  /* add user code begin my_task08_func 0 */
+  wiegand_init();
+  vTaskDelay(pdMS_TO_TICKS(500));
+  printf("[Task08] 心跳/刷卡任务启动\r\n");
 
-  /* add user code end my_task08_func 0 */
-
-  /* add user code begin my_task08_func 2 */
-
-  /* add user code end my_task08_func 2 */
-
-  /* Infinite loop */
-  while(1)
+  for (;;)
   {
-  /* add user code begin my_task08_func 1 */
+    /* 1. Wiegand刷卡检测 */
+    uint32_t card_id;
+    if (wiegand_get_card_id(&card_id)) {
+      printf("[刷卡] 卡号: %08X\r\n", (unsigned int)card_id);
+    }
 
-     vTaskDelay(1);
+    /* 2. 心跳上报 */
+    xEventGroupSetBits(my_event01_handle, TASK08_HB_BIT);
 
-  /* add user code end my_task08_func 1 */
+    vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
 
