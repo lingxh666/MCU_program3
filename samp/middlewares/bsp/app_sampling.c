@@ -275,3 +275,242 @@ uint8_t drain_is_active(void)
 {
     return (s_drain.stage != DRAIN_IDLE && s_drain.stage != DRAIN_DONE) ? 1 : 0;
 }
+
+/* ================================================================
+ *  送样状态机
+ * ================================================================ */
+
+static struct {
+    deliv_stage_t stage;
+    uint8_t  bucket_id;
+    uint8_t  is_manual;
+    uint16_t blowback_sec;
+    uint16_t deliver_sec;     /* 送样计量时长 */
+    uint16_t backdraw_sec;
+    uint16_t rpm;
+    uint32_t stage_start_sec;
+    uint32_t delay_start_ms;
+    uint8_t  result;          /* 0=fail 1=ok 2=abort */
+} s_deliv;
+
+uint8_t delivery_start(uint8_t bucket, uint8_t is_manual)
+{
+    if (s_deliv.stage != DELIV_IDLE && s_deliv.stage != DELIV_DONE
+        && s_deliv.stage != DELIV_ABORT)
+        return 0;
+
+    s_deliv.bucket_id    = bucket;
+    s_deliv.is_manual    = is_manual;
+    s_deliv.blowback_sec = g_sampling_cfg.blowback_sec;
+    s_deliv.deliver_sec  = g_sampling_cfg.blowback_sec;  /* 临时：用反吹时长代替 */
+    s_deliv.backdraw_sec = g_delivery_cfg.backdraw_sec;
+    s_deliv.rpm          = g_delivery_cfg.motor_rpm;
+    s_deliv.result       = 0;
+
+    /* 开送留样阀(送样方向) */
+    DELIVER_VALVE_ON();
+
+    /* 进入前反吹 */
+    s_deliv.stage = DELIV_PRE_BLOW;
+    s_deliv.stage_start_sec = g_tmr2_seconds;
+
+    /* 送样电机反转(清线) */
+    can_motor_set_speed(MOTOR_ID_DELIVERY, s_deliv.rpm, MOTOR_DIR_CCW);
+    can_motor_start(MOTOR_ID_DELIVERY);
+
+    printf("[送样] 启动 桶%c %s\r\n",
+           bucket ? 'B' : 'A', is_manual ? "手动" : "自动");
+
+    if (bucket == 0) g_state.bucket_a_state = BUCKET_DELIVERY;
+    else             g_state.bucket_b_state = BUCKET_DELIVERY;
+
+    return 1;
+}
+
+void delivery_step(void)
+{
+    if (s_deliv.stage == DELIV_IDLE || s_deliv.stage == DELIV_DONE
+        || s_deliv.stage == DELIV_ABORT)
+        return;
+
+    switch (s_deliv.stage) {
+    case DELIV_PRE_BLOW:
+        if ((g_tmr2_seconds - s_deliv.stage_start_sec) >= s_deliv.blowback_sec) {
+            can_motor_stop(MOTOR_ID_DELIVERY);
+            s_deliv.stage = DELIV_DELAY_AFTER_PRE;
+            s_deliv.delay_start_ms = g_tmr4_milliseconds;
+            printf("[送样] 反吹清线完成 → 延时\r\n");
+        }
+        break;
+
+    case DELIV_DELAY_AFTER_PRE:
+        if ((g_tmr4_milliseconds - s_deliv.delay_start_ms) >= STAGE_DELAY_MS) {
+            s_deliv.stage = DELIV_STABILIZE;
+            s_deliv.stage_start_sec = g_tmr2_seconds;
+            printf("[送样] 稳定等待 2s\r\n");
+        }
+        break;
+
+    case DELIV_STABILIZE:
+        if ((g_tmr2_seconds - s_deliv.stage_start_sec) >= 2) {
+            /* 开搅拌 */
+            if (s_deliv.bucket_id == 0) STIR_A_ON();
+            else                        STIR_B_ON();
+            s_deliv.stage = DELIV_MIX;
+            s_deliv.stage_start_sec = g_tmr2_seconds;
+            printf("[送样] 搅拌开始\r\n");
+        }
+        break;
+
+    case DELIV_MIX:
+        /* 搅拌3秒后开始计量 */
+        if ((g_tmr2_seconds - s_deliv.stage_start_sec) >= 3) {
+            can_motor_set_speed(MOTOR_ID_DELIVERY, s_deliv.rpm, MOTOR_DIR_CW);
+            can_motor_start(MOTOR_ID_DELIVERY);
+            s_deliv.stage = DELIV_MEASURE;
+            s_deliv.stage_start_sec = g_tmr2_seconds;
+            printf("[送样] 计量送样开始\r\n");
+        }
+        break;
+
+    case DELIV_MEASURE:
+        if ((g_tmr2_seconds - s_deliv.stage_start_sec) >= s_deliv.deliver_sec) {
+            can_motor_stop(MOTOR_ID_DELIVERY);
+            /* 停搅拌 */
+            if (s_deliv.bucket_id == 0) STIR_A_OFF();
+            else                        STIR_B_OFF();
+            s_deliv.stage = DELIV_DELAY_AFTER_MEAS;
+            s_deliv.delay_start_ms = g_tmr4_milliseconds;
+            printf("[送样] 计量完成 → 延时\r\n");
+        }
+        break;
+
+    case DELIV_DELAY_AFTER_MEAS:
+        if ((g_tmr4_milliseconds - s_deliv.delay_start_ms) >= STAGE_DELAY_MS) {
+            /* 回抽 */
+            can_motor_set_speed(MOTOR_ID_DELIVERY, s_deliv.rpm, MOTOR_DIR_CCW);
+            can_motor_start(MOTOR_ID_DELIVERY);
+            s_deliv.stage = DELIV_BACKDRAW;
+            s_deliv.stage_start_sec = g_tmr2_seconds;
+            printf("[送样] 回抽开始 %us\r\n", s_deliv.backdraw_sec);
+        }
+        break;
+
+    case DELIV_BACKDRAW:
+        if ((g_tmr2_seconds - s_deliv.stage_start_sec) >= s_deliv.backdraw_sec) {
+            can_motor_stop(MOTOR_ID_DELIVERY);
+            DELIVER_VALVE_OFF();
+            s_deliv.result = 1;
+            s_deliv.stage = DELIV_DONE;
+            if (s_deliv.bucket_id == 0) g_state.bucket_a_state = BUCKET_IDLE;
+            else                        g_state.bucket_b_state = BUCKET_IDLE;
+            printf("[送样] 完成 桶%c\r\n", s_deliv.bucket_id ? 'B' : 'A');
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+uint8_t delivery_is_active(void)
+{
+    return (s_deliv.stage != DELIV_IDLE && s_deliv.stage != DELIV_DONE
+            && s_deliv.stage != DELIV_ABORT) ? 1 : 0;
+}
+
+uint8_t delivery_get_result(void)
+{
+    return s_deliv.result;
+}
+
+/* ================================================================
+ *  留样状态机
+ * ================================================================ */
+
+/* 转盘定位超时(秒) */
+#define TURNTABLE_TIMEOUT_SEC  30
+
+static struct {
+    retain_stage_t stage;
+    uint8_t  target_bottle;   /* 目标瓶号(1-24) */
+    uint8_t  is_manual;
+    uint16_t pump_sec;        /* 泵送时长 */
+    uint16_t rpm;
+    uint32_t stage_start_sec;
+    uint8_t  result;
+} s_retain;
+
+uint8_t retain_start(uint8_t bottle_target, uint8_t is_manual)
+{
+    if (s_retain.stage != RETAIN_IDLE && s_retain.stage != RETAIN_DONE
+        && s_retain.stage != RETAIN_ABORT)
+        return 0;
+
+    s_retain.target_bottle = bottle_target;
+    s_retain.is_manual     = is_manual;
+    s_retain.pump_sec      = g_sampling_cfg.blowback_sec;  /* 临时：用反吹时长代替 */
+    s_retain.rpm           = g_retain_cfg.motor_rpm;
+    s_retain.result        = 0;
+
+    /* 启动转盘电机定位 */
+    can_motor_set_speed(MOTOR_ID_TURNTABLE, s_retain.rpm, MOTOR_DIR_CW);
+    can_motor_start(MOTOR_ID_TURNTABLE);
+
+    s_retain.stage = RETAIN_MOVE_BOTTLE;
+    s_retain.stage_start_sec = g_tmr2_seconds;
+
+    printf("[留样] 启动 目标瓶%u %s\r\n",
+           bottle_target, is_manual ? "手动" : "自动");
+    return 1;
+}
+
+void retain_step(void)
+{
+    if (s_retain.stage == RETAIN_IDLE || s_retain.stage == RETAIN_DONE
+        || s_retain.stage == RETAIN_ABORT)
+        return;
+
+    switch (s_retain.stage) {
+    case RETAIN_MOVE_BOTTLE:
+        /* 非阻塞转盘定位：检查瓶到位传感器 */
+        if (input_read(INPUT_BOTTLE_POS) == 1) {
+            /* 到位 → 停转盘 → 开始泵送 */
+            can_motor_stop(MOTOR_ID_TURNTABLE);
+            /* 开送留样阀(留样方向) + 留样电机正转 */
+            DELIVER_VALVE_ON();
+            can_motor_set_speed(MOTOR_ID_DELIVERY, s_retain.rpm, MOTOR_DIR_CW);
+            can_motor_start(MOTOR_ID_DELIVERY);
+            s_retain.stage = RETAIN_PUMP;
+            s_retain.stage_start_sec = g_tmr2_seconds;
+            printf("[留样] 瓶%u到位 → 泵送 %us\r\n",
+                   s_retain.target_bottle, s_retain.pump_sec);
+        } else if ((g_tmr2_seconds - s_retain.stage_start_sec) >= TURNTABLE_TIMEOUT_SEC) {
+            /* 超时 → 中止 */
+            can_motor_stop(MOTOR_ID_TURNTABLE);
+            s_retain.result = 0;
+            s_retain.stage = RETAIN_ABORT;
+            printf("[留样] 转盘定位超时 中止\r\n");
+        }
+        break;
+
+    case RETAIN_PUMP:
+        if ((g_tmr2_seconds - s_retain.stage_start_sec) >= s_retain.pump_sec) {
+            can_motor_stop(MOTOR_ID_DELIVERY);
+            DELIVER_VALVE_OFF();
+            s_retain.result = 1;
+            s_retain.stage = RETAIN_DONE;
+            printf("[留样] 完成 瓶%u\r\n", s_retain.target_bottle);
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+uint8_t retain_is_active(void)
+{
+    return (s_retain.stage != RETAIN_IDLE && s_retain.stage != RETAIN_DONE
+            && s_retain.stage != RETAIN_ABORT) ? 1 : 0;
+}

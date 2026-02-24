@@ -46,6 +46,31 @@ typedef enum {
 
 /* ======================== 采样电机ID ======================== */
 #define MOTOR_ID_SAMPLING     0   /* 采样蠕动泵 */
+#define MOTOR_ID_DELIVERY     1   /* 送留样蠕动泵 */
+#define MOTOR_ID_TURNTABLE    2   /* 留样转盘 */
+
+/* ======================== 送样阶段 ======================== */
+typedef enum {
+    DELIV_IDLE = 0,
+    DELIV_PRE_BLOW,       /* 反吹清线 */
+    DELIV_DELAY_AFTER_PRE,/* 反吹后延时 */
+    DELIV_STABILIZE,      /* 稳定等待(2s) */
+    DELIV_MIX,            /* 启动搅拌 */
+    DELIV_MEASURE,        /* 计量送样 */
+    DELIV_DELAY_AFTER_MEAS,/* 送样后延时 */
+    DELIV_BACKDRAW,       /* 回抽 */
+    DELIV_DONE,
+    DELIV_ABORT
+} deliv_stage_t;
+
+/* ======================== 留样阶段 ======================== */
+typedef enum {
+    RETAIN_IDLE = 0,
+    RETAIN_MOVE_BOTTLE,   /* 转盘定位 */
+    RETAIN_PUMP,          /* 泵送留样 */
+    RETAIN_DONE,
+    RETAIN_ABORT
+} retain_stage_t;
 
 /* ======================== 非阻塞状态机接口 ======================== */
 
@@ -60,6 +85,17 @@ void    sampling_abort(void);
 uint8_t drain_start(uint8_t bucket);
 void    drain_step(void);
 uint8_t drain_is_active(void);
+
+/* 送样 */
+uint8_t delivery_start(uint8_t bucket, uint8_t is_manual);
+void    delivery_step(void);
+uint8_t delivery_is_active(void);
+uint8_t delivery_get_result(void);
+
+/* 留样 */
+uint8_t retain_start(uint8_t bottle_target, uint8_t is_manual);
+void    retain_step(void);
+uint8_t retain_is_active(void);
 
 #ifdef __cplusplus
 }

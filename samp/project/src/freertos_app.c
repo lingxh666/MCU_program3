@@ -386,12 +386,18 @@ void my_task02_func(void *pvParameters)
     /* 1. 推进采样状态机 */
     sampling_step();
 
-    /* 2. 推进排水状态机 */
+    /* 2. 推进送样状态机 */
+    delivery_step();
+
+    /* 3. 推进留样状态机 */
+    retain_step();
+
+    /* 4. 推进排水状态机 */
     drain_step();
 
-    /* 3. 周期调度逻辑 (Batch 5 实现) */
+    /* 5. 周期调度逻辑 (Batch 5 实现) */
 
-    /* 4. 心跳上报 */
+    /* 6. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK02_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(50));  /* 50ms轮询周期 */
