@@ -78,6 +78,11 @@ uint8_t input_get_dip_switch(void)
   return val;
 }
 
+uint8_t read_trigger_sampling_signal(void)
+{
+  return input_read(INPUT_TRIG_SAMPLE);
+}
+
 /* ======================== H-Bridge Motor Functions ======================== */
 void bottle_motor_set(motor_dir_t dir)
 {

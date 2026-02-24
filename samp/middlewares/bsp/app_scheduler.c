@@ -318,20 +318,385 @@ static void sched_time_prop(void)
 
 static void sched_fixed_time(void)
 {
-    /* 批次3 Task 3.1 实现 */
+    rtc_datetime_t dt;
+    uint32_t now_sec;
+    uint8_t h, i;
+
+    rtc_get_time(&dt);
+    now_sec = (uint32_t)dt.hour * 3600 + (uint32_t)dt.min * 60 + dt.sec;
+
+    if (s_sched.phase == PHASE_STARTUP) {
+        s_sched.phase = PHASE_CYCLING;
+        s_sched.active_bucket = 0;
+        s_sched.ft.last_check_hour = 0xFF;
+        printf("[定时触发] 直接进入周期循环\r\n");
+        return;
+    }
+    if (s_sched.phase != PHASE_CYCLING) return;
+
+    for (h = 0; h < 24; h++) {
+        if (!g_delivery_cfg.fixedhour[h]) continue;
+
+        {
+            uint8_t fmin = g_delivery_cfg.fixedmin;
+            uint8_t cycle_start_h = (fmin >= 50) ? h : ((h + 23) % 24);
+            uint32_t cycle_base = (uint32_t)cycle_start_h * 3600;
+
+            for (i = 0; i < s_sched.sample_count; i++) {
+                uint32_t mask = 1u << i;
+                uint32_t sample_sec;
+                int32_t diff;
+                if (s_sched.sample_done_mask & mask) continue;
+
+                sample_sec = cycle_base + (uint32_t)s_sched.sample_offsets[i] * 60;
+                diff = (int32_t)(now_sec - sample_sec);
+                if (diff < 0) diff = -diff;
+
+                if (diff <= 30 && !sampling_is_active()) {
+                    if (sampling_start(s_sched.active_bucket, 0)) {
+                        s_sched.sample_done_mask |= mask;
+                        s_sched.total_samples++;
+                    }
+                }
+            }
+
+            if (dt.hour == h && dt.min == fmin && dt.sec == 0 &&
+                !s_sched.delivery_done)
+            {
+                uint16_t water = s_sched.active_bucket ?
+                                 g_state.water_b : g_state.water_a;
+                if (water > 0 && !delivery_is_active()) {
+                    if (delivery_start(s_sched.active_bucket, 0)) {
+                        s_sched.delivery_done = 1;
+                        s_sched.total_deliveries++;
+                        scheduler_notify_task4_delivery(s_sched.active_bucket);
+                        s_sched.active_bucket ^= 1;
+                        s_sched.sample_done_mask = 0;
+                        s_sched.delivery_done = 0;
+                        s_sched.total_cycles++;
+                    }
+                }
+            }
+        }
+    }
 }
 
 static void sched_flow(void)
 {
-    /* 批次3 Task 3.2 实现 */
+    rtc_datetime_t dt;
+    uint32_t now_sec;
+    uint16_t cycle_min, cycle_hours;
+
+    rtc_get_time(&dt);
+    now_sec = (uint32_t)dt.hour * 3600 + (uint32_t)dt.min * 60 + dt.sec;
+
+    /* STOPPED/STARTUP: 等待流量信号 */
+    if (s_sched.phase == PHASE_STOPPED || s_sched.phase == PHASE_STARTUP) {
+        if (s_sched.fl.flow_active) {
+            s_sched.phase = PHASE_STARTUP;
+            s_sched.fl.startup_phase = 0;
+            s_sched.active_bucket = 0;
+            s_sched.sample_done_mask = 0;
+            printf("[流量触发] 流量开始，进入启动阶段\r\n");
+        } else {
+            if (s_sched.phase == PHASE_STARTUP) {
+                s_sched.phase = PHASE_STOPPED;
+            }
+            return;
+        }
+    }
+
+    /* 流量停止检测 */
+    if (!s_sched.fl.flow_active && s_sched.phase == PHASE_CYCLING) {
+        uint16_t water;
+        printf("[流量触发] 流量停止\r\n");
+        sampling_abort();
+        water = s_sched.active_bucket ? g_state.water_b : g_state.water_a;
+        if (water > 0 && !delivery_is_active()) {
+            delivery_start(s_sched.active_bucket, 0);
+            scheduler_notify_task4_delivery(0xFF);
+        }
+        s_sched.phase = PHASE_STOPPED;
+        return;
+    }
+
+    /* STARTUP: 3阶段 */
+    if (s_sched.phase == PHASE_STARTUP) {
+        switch (s_sched.fl.startup_phase) {
+        case 0: /* 瞬时送样 */
+            if (!delivery_is_active()) {
+                uint16_t water = g_state.water_a;
+                if (water > 0) {
+                    delivery_start(0, 0);
+                    scheduler_notify_task4_delivery(0);
+                }
+                s_sched.fl.startup_phase = 1;
+            }
+            break;
+        case 1: /* 满量采样(A桶) */
+        {
+            uint32_t expected = (1u << s_sched.sample_count) - 1;
+            if (s_sched.sample_done_mask == expected) {
+                s_sched.fl.startup_phase = 2;
+                break;
+            }
+            if (!sampling_is_active()) {
+                uint8_t i;
+                for (i = 0; i < s_sched.sample_count; i++) {
+                    if (!(s_sched.sample_done_mask & (1u << i))) {
+                        sampling_start(0, 0);
+                        s_sched.sample_done_mask |= (1u << i);
+                        s_sched.total_samples++;
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        case 2: /* 等待整点 */
+            if (dt.min == 0 && dt.sec == 0) {
+                s_sched.cycle_start_hour = dt.hour;
+                s_sched.cycle_idx = 0;
+                s_sched.sample_done_mask = 0;
+                s_sched.delivery_done = 0;
+                s_sched.phase = PHASE_CYCLING;
+                printf("[流量触发] 进入周期循环\r\n");
+            }
+            break;
+        }
+        return;
+    }
+
+    /* CYCLING: 周期循环 */
+    cycle_min = g_sampling_cfg.cycle_time_min;
+    cycle_hours = cycle_min / 60;
+    if (cycle_hours == 0) cycle_hours = 1;
+
+    {
+        uint32_t cycle_start_sec = (uint32_t)s_sched.cycle_start_hour * 3600;
+        uint32_t elapsed = (now_sec >= cycle_start_sec) ?
+                           (now_sec - cycle_start_sec) :
+                           (now_sec + 86400 - cycle_start_sec);
+        uint32_t new_idx = elapsed / (cycle_min * 60);
+
+        if (new_idx != s_sched.cycle_idx) {
+            s_sched.cycle_idx = new_idx;
+            s_sched.active_bucket ^= 1;
+            s_sched.sample_done_mask = 0;
+            s_sched.delivery_done = 0;
+            s_sched.total_cycles++;
+        }
+
+        /* 采样触发 */
+        {
+            uint8_t i;
+            uint32_t cycle_base = cycle_start_sec + s_sched.cycle_idx * cycle_min * 60;
+            for (i = 0; i < s_sched.sample_count; i++) {
+                uint32_t mask = 1u << i;
+                uint32_t sample_sec;
+                int32_t diff;
+                if (s_sched.sample_done_mask & mask) continue;
+
+                sample_sec = cycle_base + (uint32_t)s_sched.sample_offsets[i] * 60;
+                diff = (int32_t)(now_sec - sample_sec);
+                if (diff < 0) diff = -diff;
+
+                if (diff <= 30 && !sampling_is_active()) {
+                    if (sampling_start(s_sched.active_bucket, 0)) {
+                        s_sched.sample_done_mask |= mask;
+                        s_sched.total_samples++;
+                    }
+                }
+            }
+        }
+
+        /* 送样触发 */
+        if (!s_sched.delivery_done && dt.sec == 0) {
+            uint8_t delivery_hour = (s_sched.cycle_start_hour +
+                                     (uint8_t)((s_sched.cycle_idx + 1) * cycle_hours) +
+                                     24 - 1) % 24;
+            if (dt.hour == delivery_hour && dt.min == g_delivery_cfg.start_min) {
+                uint16_t water = s_sched.active_bucket ?
+                                 g_state.water_b : g_state.water_a;
+                if (water > 0 && !delivery_is_active()) {
+                    if (delivery_start(s_sched.active_bucket, 0)) {
+                        s_sched.delivery_done = 1;
+                        s_sched.total_deliveries++;
+                        scheduler_notify_task4_delivery(s_sched.active_bucket);
+                    }
+                }
+            }
+        }
+    }
 }
 
 static void sched_switch(void)
 {
-    /* 批次3 Task 3.3 实现 */
+    rtc_datetime_t dt;
+    uint32_t now_sec;
+    uint16_t cycle_min;
+
+    rtc_get_time(&dt);
+    now_sec = (uint32_t)dt.hour * 3600 + (uint32_t)dt.min * 60 + dt.sec;
+
+    /* 等待首次GPIO信号 */
+    if (s_sched.phase == PHASE_STARTUP && !s_sched.sw.first_trigger_done) {
+        extern uint8_t read_trigger_sampling_signal(void);
+        if (read_trigger_sampling_signal() == 0) {
+            s_sched.sw.first_trigger_done = 1;
+            s_sched.cycle_start_hour = (dt.hour + 2) % 24;
+            s_sched.active_bucket = 0;
+            s_sched.sample_done_mask = 0;
+            s_sched.phase = PHASE_CYCLING;
+            printf("[开关量] 首次触发，等待整点进入周期\r\n");
+        }
+        return;
+    }
+
+    if (s_sched.phase != PHASE_CYCLING) return;
+
+    /* 恢复等待 */
+    if (s_sched.sw.waiting_resume) {
+        extern uint8_t read_trigger_sampling_signal(void);
+        if (read_trigger_sampling_signal() == 0) {
+            s_sched.sw.waiting_resume = 0;
+            s_sched.sw.first_trigger_done = 0;
+            s_sched.phase = PHASE_STARTUP;
+            printf("[开关量] 信号恢复，重新启动\r\n");
+        }
+        return;
+    }
+
+    /* 周期循环 + 窗口检测 */
+    cycle_min = g_sampling_cfg.cycle_time_min;
+    {
+        uint32_t cycle_start_sec = (uint32_t)s_sched.cycle_start_hour * 3600;
+        uint32_t elapsed = (now_sec >= cycle_start_sec) ?
+                           (now_sec - cycle_start_sec) :
+                           (now_sec + 86400 - cycle_start_sec);
+        uint32_t new_idx = elapsed / (cycle_min * 60);
+
+        if (new_idx != s_sched.cycle_idx) {
+            s_sched.cycle_idx = new_idx;
+            s_sched.active_bucket ^= 1;
+            s_sched.sample_done_mask = 0;
+            s_sched.delivery_done = 0;
+            s_sched.total_cycles++;
+            memset(s_sched.sw.window_triggered, 0, sizeof(s_sched.sw.window_triggered));
+        }
+
+        /* 窗口检测采样 */
+        {
+            uint8_t i;
+            uint32_t cycle_base = cycle_start_sec + s_sched.cycle_idx * cycle_min * 60;
+            for (i = 0; i < s_sched.sample_count; i++) {
+                uint32_t mask = 1u << i;
+                uint32_t sample_sec;
+                if (s_sched.sample_done_mask & mask) continue;
+
+                sample_sec = cycle_base + (uint32_t)s_sched.sample_offsets[i] * 60;
+                if (now_sec >= sample_sec - 60 && now_sec <= sample_sec + 60) {
+                    if (!s_sched.sw.window_triggered[i]) {
+                        extern uint8_t read_trigger_sampling_signal(void);
+                        if (read_trigger_sampling_signal() == 0) {
+                            s_sched.sw.window_triggered[i] = 1;
+                        }
+                    }
+                    if (s_sched.sw.window_triggered[i] && !sampling_is_active()) {
+                        if (sampling_start(s_sched.active_bucket, 0)) {
+                            s_sched.sample_done_mask |= mask;
+                            s_sched.total_samples++;
+                        }
+                    }
+                }
+            }
+        }
+
+        /* 送样触发 */
+        if (!s_sched.delivery_done && dt.sec == 0) {
+            uint16_t cycle_hours = cycle_min / 60;
+            if (cycle_hours == 0) cycle_hours = 1;
+            {
+                uint8_t delivery_hour = (s_sched.cycle_start_hour +
+                                         (uint8_t)((s_sched.cycle_idx + 1) * cycle_hours) +
+                                         24 - 1) % 24;
+                if (dt.hour == delivery_hour && dt.min == g_delivery_cfg.start_min) {
+                    uint16_t water = s_sched.active_bucket ?
+                                     g_state.water_b : g_state.water_a;
+                    if (water > 0 && !delivery_is_active()) {
+                        if (delivery_start(s_sched.active_bucket, 0)) {
+                            s_sched.delivery_done = 1;
+                            s_sched.total_deliveries++;
+                            scheduler_notify_task4_delivery(s_sched.active_bucket);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 static void sched_comm(void)
 {
-    /* 批次3 Task 3.4 实现 */
+    uint8_t bucket;
+    uint16_t samples_per_cycle;
+
+    if (s_sched.phase == PHASE_STARTUP) {
+        s_sched.phase = PHASE_CYCLING;
+    }
+    if (!g_comm_trigger_req.pending) return;
+
+    switch (g_comm_trigger_req.type) {
+    case COMM_REQ_SAMPLING:
+        bucket = (g_comm_trigger_req.bucket == 2) ?
+                 s_sched.active_bucket : g_comm_trigger_req.bucket;
+        if (!sampling_is_active()) {
+            if (sampling_start(bucket, 0)) {
+                s_sched.total_samples++;
+                if (g_comm_trigger_req.bucket == 2 &&
+                    g_sampling_cfg.cycle_time_min > 0 &&
+                    g_sampling_cfg.interval_min > 0)
+                {
+                    samples_per_cycle = g_sampling_cfg.cycle_time_min /
+                                        g_sampling_cfg.interval_min;
+                    if (samples_per_cycle > 0 &&
+                        (s_sched.total_samples % samples_per_cycle) == 0)
+                    {
+                        s_sched.active_bucket ^= 1;
+                        s_sched.total_cycles++;
+                    }
+                }
+            }
+        }
+        break;
+
+    case COMM_REQ_DELIVERY:
+        bucket = (g_comm_trigger_req.bucket == 2) ?
+                 (1 - s_sched.active_bucket) : g_comm_trigger_req.bucket;
+        {
+            uint16_t water = bucket ? g_state.water_b : g_state.water_a;
+            if (water > 0 && !delivery_is_active()) {
+                if (delivery_start(bucket, 0)) {
+                    s_sched.total_deliveries++;
+                    scheduler_notify_task4_delivery(bucket);
+                }
+            }
+        }
+        break;
+
+    case COMM_REQ_DRAIN:
+        bucket = g_comm_trigger_req.bucket;
+        if (bucket == 2) {
+            drain_start(0);
+        } else {
+            drain_start(bucket);
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    g_comm_trigger_req.pending = 0;
+    g_comm_trigger_req.type = COMM_REQ_NONE;
 }

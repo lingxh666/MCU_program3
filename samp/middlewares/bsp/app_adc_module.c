@@ -4,6 +4,7 @@
  */
 #include "app_adc_module.h"
 #include "app_config.h"
+#include "app_scheduler.h"
 #include "bsp_uart.h"
 #include <stdio.h>
 
@@ -97,7 +98,7 @@ static void adc_module_update_flow(void)
         g_adc_module.flow_active = 1;
         printf("[ADC_MOD] 流量开始: %.2f >= %u\r\n",
                g_adc_module.flow_value, g_sampling_cfg.flow_start);
-        /* scheduler_notify_flow(1) 将在批次2集成 */
+        scheduler_notify_flow(1);
     }
     else if (g_adc_module.flow_active &&
              g_adc_module.flow_value <= (float)g_sampling_cfg.flow_stop)
@@ -105,7 +106,7 @@ static void adc_module_update_flow(void)
         g_adc_module.flow_active = 0;
         printf("[ADC_MOD] 流量停止: %.2f <= %u\r\n",
                g_adc_module.flow_value, g_sampling_cfg.flow_stop);
-        /* scheduler_notify_flow(0) 将在批次2集成 */
+        scheduler_notify_flow(0);
     }
 }
 

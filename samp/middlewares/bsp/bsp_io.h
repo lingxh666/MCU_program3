@@ -83,6 +83,7 @@ void relay_all_off(void);
 
 uint8_t input_read(input_id_t id);
 uint8_t input_get_dip_switch(void);
+uint8_t read_trigger_sampling_signal(void);
 
 void bottle_motor_set(motor_dir_t dir);
 motor_dir_t bottle_motor_get_dir(void);
