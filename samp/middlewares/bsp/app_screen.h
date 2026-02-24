@@ -30,6 +30,64 @@ extern "C" {
 #define SCR_CMD_SYS_STOP        0x0021  /* 系统停止 */
 #define SCR_CMD_SAMP_ABORT      0x0030  /* 中止采样 */
 
+/* ======================== cmd_type 定义 ======================== */
+#define SCR_CMD_TYPE_SETTINGS   0x50  /* 设置类命令 */
+#define SCR_CMD_TYPE_CALIB      0x51  /* 校准类命令 */
+#define SCR_CMD_TYPE_MANUAL     0x52  /* 手动控制命令 */
+#define SCR_CMD_TYPE_CONFIRM    0x00  /* 确认/系统命令 */
+
+/* ======================== 采样设置 sub_cmd (cmd_type=0x50) ======================== */
+#define SCR_SUB_SAMP_MODE       0x10  /* 采样模式 */
+#define SCR_SUB_SAMP_INTERVAL   0x11  /* 采样间隔 */
+#define SCR_SUB_SAMP_VOLUME     0x12  /* 单次采样量 */
+#define SCR_SUB_SAMP_BLOWBACK   0x13  /* 反吹时间 */
+#define SCR_SUB_SAMP_IMPROVE    0x14  /* 提升时间 */
+#define SCR_SUB_SAMP_TUBEHOLD   0x15  /* 管存时间 */
+#define SCR_SUB_SAMP_CYCLETIME  0x16  /* 周期时间 */
+#define SCR_SUB_SAMP_DRAINTIME  0x17  /* 桶排空时间 */
+#define SCR_SUB_SAMP_ANALYSIS   0x18  /* 仪器分析时间 */
+#define SCR_SUB_SAMP_FLOWSTART  0x1B  /* 流量触发值 */
+#define SCR_SUB_SAMP_FLOWSTOP   0x1C  /* 流量停止值 */
+
+/* ======================== 送样设置 sub_cmd ======================== */
+#define SCR_SUB_DELIV_HOUR      0x40  /* 送样小时 */
+#define SCR_SUB_DELIV_MIN       0x41  /* 送样分钟 */
+#define SCR_SUB_DELIV_DURATION  0x42  /* 送样时长 */
+#define SCR_SUB_DELIV_BACKDRAW  0x43  /* 回抽间隔 */
+#define SCR_SUB_DELIV_ENABLE    0x46  /* 定时启动 */
+
+/* ======================== 留样设置 sub_cmd ======================== */
+#define SCR_SUB_RETAIN_MODE     0x60  /* 留样模式 */
+#define SCR_SUB_RETAIN_VOLUME   0x61  /* 留样量 */
+#define SCR_SUB_RETAIN_PARALLEL 0x62  /* 平行样数 */
+#define SCR_SUB_RETAIN_MIX      0x63  /* 混样次数 */
+#define SCR_SUB_RETAIN_BLOWBACK 0x64  /* 留样反吹 */
+#define SCR_SUB_RETAIN_ENABLE   0x65  /* 是否留样 */
+#define SCR_SUB_RETAIN_ACID     0x66  /* 是否加酸 */
+#define SCR_SUB_RETAIN_TUBEHOLD 0x68  /* 留样管存 */
+#define SCR_SUB_RETAIN_BACKDRAW 0x69  /* 留样回抽 */
+
+/* ======================== 通讯设置 sub_cmd ======================== */
+#define SCR_SUB_COMM_PROTOCOL   0xB0  /* 通讯协议 */
+#define SCR_SUB_COMM_ADDR       0xB1  /* 设备地址 */
+#define SCR_SUB_COMM_FLOWLOWER  0xB2  /* 流量AD下限 */
+
+/* ======================== 系统命令 sub_cmd ======================== */
+#define SCR_SUB_SYS_AUTORUN     0xBF  /* 自动运行模式 */
+
+/* ======================== 确认命令 action 值 ======================== */
+#define SCR_ACT_RESET           0x00  /* 系统复位 */
+#define SCR_ACT_START           0x02  /* 系统启动(value=0x02) */
+#define SCR_ACT_ESTOP           0x03  /* 紧急停止 */
+#define SCR_ACT_MANUAL_SAMP     0x23  /* 手动采样执行 */
+#define SCR_ACT_MANUAL_DELIV    0x21  /* 手动送样执行 */
+#define SCR_ACT_MANUAL_RETAIN   0x25  /* 手动留样执行 */
+#define SCR_ACT_BOTTLE_RESET    0x14  /* 留样瓶复位 */
+
+/* ======================== 状态页回写地址 (0x5200起) ======================== */
+#define SCR_STATUS_BASE         0x5200
+#define SCR_STATUS_FRAME_LEN    128   /* 状态帧长度 */
+
 /* ======================== 命令缓冲区（ISR → Task） ======================== */
 #define SCR_CMD_BUF_SIZE  8
 

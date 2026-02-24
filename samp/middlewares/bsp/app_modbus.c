@@ -5,6 +5,8 @@
 #include "app_modbus.h"
 #include "bsp_crc.h"
 #include "app_config.h"
+#include "app_adc_module.h"
+#include "app_scheduler.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -75,6 +77,21 @@ void modbus_sync_status(void)
     s_input_regs[2] = g_state.bucket_b_state;
     s_input_regs[3] = g_state.current_bucket;
     s_input_regs[4] = s_protocol;  /* 当前协议变体 */
+
+    /* ADC模块数据 */
+    s_input_regs[10] = adc_module_get_raw(0);
+    s_input_regs[11] = adc_module_get_raw(1);
+    s_input_regs[12] = adc_module_get_raw(2);
+    s_input_regs[13] = adc_module_get_raw(3);
+    s_input_regs[14] = adc_module_get_raw(4);
+    s_input_regs[15] = adc_module_get_raw(5);
+
+    /* 调度器状态 */
+    s_input_regs[20] = g_state.current_mode;
+    s_input_regs[21] = g_state.current_phase;
+    s_input_regs[22] = (uint16_t)g_state.cycle_count;
+    s_input_regs[23] = (uint16_t)g_state.sample_count;
+    s_input_regs[24] = (uint16_t)g_state.delivery_count;
 }
 
 /* ======================== 异常应答 ======================== */
@@ -169,6 +186,24 @@ static uint16_t mb_write_single(const uint8_t *frame,
         return 0;
 
     s_holding_regs[addr] = value;
+
+    /* 通信触发命令 */
+    switch (addr) {
+    case 40:
+        scheduler_notify_comm(COMM_REQ_SAMPLING,
+                              (uint8_t)(value >> 8), value & 0xFF);
+        break;
+    case 41:
+        scheduler_notify_comm(COMM_REQ_DELIVERY,
+                              (uint8_t)(value >> 8), 0);
+        break;
+    case 42:
+        scheduler_notify_comm(COMM_REQ_DRAIN,
+                              (uint8_t)(value >> 8), 0);
+        break;
+    default:
+        break;
+    }
 
     /* 原样回显 */
     memcpy(resp, frame, 6);
