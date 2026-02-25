@@ -63,6 +63,12 @@
 #define TASK08_HB_BIT  (1 << 6)
 #define ALL_HB_BITS    (0x7F)
 
+/* 子系统就绪事件位（使用高位，与心跳位不冲突） */
+#define KVDB_READY_BIT   (1 << 8)
+#define TSDB_READY_BIT   (1 << 9)
+#define SCREEN_READY_BIT (1 << 10)
+#define ALL_READY_BITS   (KVDB_READY_BIT | TSDB_READY_BIT | SCREEN_READY_BIT)
+
 /* add user code end private define */
 
 /* private macro -------------------------------------------------------------*/
@@ -386,7 +392,15 @@ void my_task02_func(void *pvParameters)
   /* 上电初始化：加载配置 */
   cfg_init_load();
   scheduler_init((sched_mode_t)g_sampling_cfg.mode);
+
+  /* 通知KVDB就绪 */
+  xEventGroupSetBits(my_event01_handle, KVDB_READY_BIT);
+
   vTaskDelay(pdMS_TO_TICKS(1000));  /* 等待外设就绪 */
+
+  /* 通知TSDB就绪 */
+  xEventGroupSetBits(my_event01_handle, TSDB_READY_BIT);
+
   printf("[Task02] 采样主控任务启动\r\n");
 
   for (;;)
@@ -425,6 +439,10 @@ void my_task03_func(void *pvParameters)
 {
   screen_task_init();
   vTaskDelay(pdMS_TO_TICKS(500));
+
+  /* 通知屏幕就绪 */
+  xEventGroupSetBits(my_event01_handle, SCREEN_READY_BIT);
+
   printf("[Task03] 串口屏通信任务启动\r\n");
 
   static uint32_t last_update_sec = 0;
@@ -603,8 +621,32 @@ void my_task07_func(void *pvParameters)
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   uint32_t pvm_count = bsp_pvm_get_count();
+  uint8_t wdt_timeout_count = 0;
+
   printf("[Task07] 系统管理任务启动 (WDT已启用, 历史掉电%u次)\r\n",
          (unsigned int)pvm_count);
+
+  /* 等待子系统就绪后执行断电恢复检测 */
+  EventBits_t ready = xEventGroupWaitBits(
+      my_event01_handle, ALL_READY_BITS, pdFALSE, pdTRUE,
+      pdMS_TO_TICKS(10000));
+  if ((ready & ALL_READY_BITS) == ALL_READY_BITS) {
+    printf("[Task07] 所有子系统就绪\r\n");
+
+    /* 断电恢复判定：系统未运行 + 瓶位有效 + 自动运行已启用 */
+    if (g_state.running == 0 &&
+        g_system_setting_cfg.auto_run_mode == 1 &&
+        g_retain_bottle_state.current_bottle > 0 &&
+        g_retain_bottle_state.current_bottle <= 24)
+    {
+      printf("[Task07] 检测到断电恢复需求: 瓶号=%u\r\n",
+             g_retain_bottle_state.current_bottle);
+      system_start_sequence(START_MODE_POWER_RECOVERY);
+    }
+  } else {
+    printf("[Task07] 子系统就绪超时: bits=0x%04X\r\n",
+           (unsigned int)ready);
+  }
 
   for (;;)
   {
@@ -612,28 +654,51 @@ void my_task07_func(void *pvParameters)
     EventBits_t bits = xEventGroupWaitBits(
         my_event01_handle, ALL_HB_BITS, pdTRUE, pdTRUE,
         pdMS_TO_TICKS(5000));
+
     if ((bits & ALL_HB_BITS) == ALL_HB_BITS) {
       bsp_wdt_feed();
+      wdt_timeout_count = 0;
     } else {
-      printf("[Task07] 心跳超时! bits=0x%02X\r\n", (unsigned int)bits);
+      wdt_timeout_count++;
+      printf("[Task07] 心跳超时#%u! bits=0x%02X 缺失:",
+             wdt_timeout_count, (unsigned int)bits);
+      if (!(bits & TASK02_HB_BIT)) printf(" T02");
+      if (!(bits & TASK03_HB_BIT)) printf(" T03");
+      if (!(bits & TASK04_HB_BIT)) printf(" T04");
+      if (!(bits & TASK05_HB_BIT)) printf(" T05");
+      if (!(bits & TASK06_HB_BIT)) printf(" T06");
+      if (!(bits & TASK07_HB_BIT)) printf(" T07");
+      if (!(bits & TASK08_HB_BIT)) printf(" T08");
+      printf("\r\n");
+
+      /* 记录超时事件到TSDB */
+      uint32_t evt_data = ((uint32_t)wdt_timeout_count << 16) |
+                          (bits & 0xFFFF);
+      tsdb_event_append(EVT_POWER_OFF, &evt_data, sizeof(evt_data));
+
+      /* 连续超时5次则系统复位 */
+      if (wdt_timeout_count >= 5) {
+        printf("[Task07] 连续%u次超时，系统复位\r\n", wdt_timeout_count);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        NVIC_SystemReset();
+      }
+
+      /* 前几次超时仍喂狗，给恢复机会 */
+      bsp_wdt_feed();
     }
 
     /* 2. KVDB脏数据定时刷写（每30秒） */
-    {
-      static uint32_t last_flush_sec = 0;
-      if ((g_tmr2_seconds - last_flush_sec) >= 30) {
-        cfg_save_all();
-        last_flush_sec = g_tmr2_seconds;
-      }
+    static uint32_t last_flush_sec = 0;
+    if ((g_tmr2_seconds - last_flush_sec) >= 30) {
+      cfg_save_all();
+      last_flush_sec = g_tmr2_seconds;
     }
 
     /* 3. 掉电次数变化检测 */
-    {
-      uint32_t cur = bsp_pvm_get_count();
-      if (cur != pvm_count) {
-        printf("[Task07] 检测到掉电! 累计%u次\r\n", (unsigned int)cur);
-        pvm_count = cur;
-      }
+    uint32_t cur_pvm = bsp_pvm_get_count();
+    if (cur_pvm != pvm_count) {
+      printf("[Task07] 检测到掉电! 累计%u次\r\n", (unsigned int)cur_pvm);
+      pvm_count = cur_pvm;
     }
 
     /* 4. 心跳上报 */

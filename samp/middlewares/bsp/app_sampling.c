@@ -8,12 +8,15 @@
  */
 #include "app_sampling.h"
 #include "app_config.h"
+#include "app_scheduler.h"
 #include "bsp_io.h"
 #include "bsp_can_motor.h"
 #include "bsp_timer.h"
 #include "app_flashdb.h"
 #include "app_sample_id.h"
 #include "bsp_rtc.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -547,12 +550,82 @@ uint8_t retain_is_active(void)
             && s_retain.stage != RETAIN_ABORT) ? 1 : 0;
 }
 
-/* ======================== 系统启动序列（S8完整实现） ======================== */
-__attribute__((weak))
+/* ======================== 系统启动序列 ======================== */
 void system_start_sequence(SystemStartMode mode)
 {
-    /* S8批次实现完整启动序列，当前仅打印 */
-    printf("[系统启动] mode=%u (桩函数，S8实现)\r\n", (unsigned)mode);
+    extern volatile uint32_t g_tmr2_seconds;
+
+    printf("[系统启动] 模式=%s\r\n",
+           (mode == START_MODE_MANUAL) ? "手动启动" : "断电恢复");
+
+    /* 初始化sample_id生成器 */
+    sample_id_init();
+
+    if (mode == START_MODE_MANUAL) {
+        /* 手动启动：重新加载配置 + 排空双桶 */
+        cfg_init_load();
+
+        /* 瓶位重置 */
+        g_retain_bottle_state.current_bottle = 1;
+        g_retain_bottle_state.used_mask = 0;
+        cfg_save_retain_state(&g_retain_bottle_state);
+        g_state.bottle_current = 1;
+        g_state.bottle_next = 1;
+
+        /* 排空双桶（阻塞等待30秒） */
+        printf("[系统启动] 排空双桶...\r\n");
+        uint32_t t0 = g_tmr2_seconds;
+        DRAIN_A_ON();
+        DRAIN_B_ON();
+        g_state.drain_a = 1;
+        g_state.drain_b = 1;
+        update_bucket_state(0, BUCKET_DRAINING);
+        update_bucket_state(1, BUCKET_DRAINING);
+
+        while ((g_tmr2_seconds - t0) < 30) {
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
+
+        DRAIN_A_OFF();
+        DRAIN_B_OFF();
+        g_state.drain_a = 0;
+        g_state.drain_b = 0;
+        g_state.water_a = 0;
+        g_state.water_b = 0;
+        update_bucket_state(0, BUCKET_IDLE);
+        update_bucket_state(1, BUCKET_IDLE);
+        printf("[系统启动] 双桶排空完成\r\n");
+    } else {
+        /* 断电恢复：从KVDB加载瓶位状态 */
+        cfg_load_retain_state(&g_retain_bottle_state);
+        if (g_retain_bottle_state.current_bottle == 0 ||
+            g_retain_bottle_state.current_bottle > 24)
+        {
+            g_retain_bottle_state.current_bottle = 1;
+        }
+        g_state.bottle_current = g_retain_bottle_state.current_bottle;
+        g_state.bottle_next = g_retain_bottle_state.current_bottle;
+        printf("[系统启动] 恢复瓶位: %u\r\n",
+               g_retain_bottle_state.current_bottle);
+    }
+
+    g_state.running = 1;
+
+    /* 初始化并启动调度器 */
+    scheduler_init((sched_mode_t)g_sampling_cfg.mode);
+    scheduler_start();
+
+    /* 记录启动事件到TSDB */
+    struct {
+        uint8_t start_mode;
+        uint8_t bottle;
+    } evt;
+    evt.start_mode = (uint8_t)mode;
+    evt.bottle = g_retain_bottle_state.current_bottle;
+    tsdb_event_append(EVT_POWER_ON, &evt, sizeof(evt));
+
+    printf("[系统启动] 完成, 瓶号=%u\r\n",
+           g_retain_bottle_state.current_bottle);
 }
 
 /* ======================== 桶状态更新 ======================== */
