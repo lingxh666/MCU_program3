@@ -93,6 +93,71 @@ typedef struct {
     float    flow_meter_base; /* 流量计量程(m³/h) */
 } CommConfig;
 
+/* ======================== 系统设置配置（从KVDB加载） ======================== */
+typedef struct {
+    /* 时间设置 */
+    uint16_t year;
+    uint8_t  month;
+    uint8_t  day;
+    uint8_t  hour;
+    uint8_t  minute;
+    uint8_t  second;
+    /* 模式设置 */
+    uint8_t  water_station_mode;  /* 水站模式(1=启用 0=禁用) */
+    uint8_t  auto_run_mode;       /* 自动运行(1=启用 0=禁用) */
+    /* 软件信息 */
+    char     sw_serial[24];       /* 软件序列号 */
+    char     sw_core_ver[16];     /* 软件核心板版本 */
+    char     sw_lcd_ver[16];      /* 软件液晶屏版本 */
+    /* 硬件信息 */
+    char     hw_base_ver[16];     /* 硬件底板版本 */
+    char     hw_core_ver[16];     /* 硬件核心板版本 */
+    char     hw_lcd_ver[16];      /* 硬件液晶屏版本 */
+    /* 门禁卡号 */
+    uint32_t card_id[10];
+    /* 电机 */
+    uint8_t  motor_speed;         /* 蠕动泵转速 */
+} SystemSettingConfig;
+
+/* ======================== 精度校准参数（从KVDB加载） ======================== */
+typedef struct {
+    /* 采样量校准 */
+    struct {
+        uint16_t time1;       uint16_t real_value1;
+        uint16_t time2;       uint16_t real_value2;
+        uint16_t time3;       uint16_t real_value3;
+    } sampling;
+    /* 留样量校准 */
+    struct {
+        uint16_t time1;       uint16_t real_value1;
+        uint16_t time2;       uint16_t real_value2;
+        uint16_t time3;       uint16_t real_value3;
+    } retain;
+    /* 加酸量校准 */
+    struct {
+        uint16_t time1;       uint16_t real_value1;
+        uint16_t time2;       uint16_t real_value2;
+        uint16_t time3;       uint16_t real_value3;
+    } acid;
+    /* 温度校准 */
+    struct {
+        uint16_t input_ad;
+        uint16_t zero_point_ad;
+        uint16_t calib_ad;
+        uint16_t calib_value;   /* 实际值 = calib_value / 100.0f */
+        uint16_t set_temp;
+        uint16_t upper_dev;
+        uint16_t lower_dev;
+        uint16_t zero_temp;     /* 实际值 = zero_temp / 100.0f */
+    } temp;
+} CalibrationParams;
+
+/* ======================== 留样瓶位状态（持久化到KVDB） ======================== */
+typedef struct {
+    uint8_t  current_bottle;    /* 当前瓶号 1..24 */
+    uint32_t used_mask;         /* bit0→瓶1, bit23→瓶24 */
+} RetainBottleState;
+
 /* ======================== 通道限值配置 ======================== */
 typedef struct {
     uint8_t  enable;          /* 是否启用 */
@@ -112,6 +177,9 @@ extern DeliveryConfig     g_delivery_cfg;
 extern RetainConfig       g_retain_cfg;
 extern CommConfig         g_comm_cfg;
 extern ChannelLimitConfig g_ch_limits[6];
+extern SystemSettingConfig  g_system_setting_cfg;
+extern CalibrationParams    g_calib_params;
+extern RetainBottleState    g_retain_bottle_state;
 
 #ifdef __cplusplus
 }

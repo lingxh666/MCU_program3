@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "flashdb.h"
+#include "app_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,10 +40,7 @@ typedef struct {
   uint8_t acid_added;       /* 0=no 1=yes */
 } RetainSampleLogData;
 
-typedef struct {
-  uint8_t currentBottle;    /* 1..24 */
-  uint32_t usedMask;        /* bit0->bottle1, bit23->bottle24 */
-} RetainBottleState;
+/* RetainBottleState 定义在 app_config.h 中 */
 
 /* ===== Event Type 常量 ===== */
 #define EVT_SAMPLE_DONE     0x0040

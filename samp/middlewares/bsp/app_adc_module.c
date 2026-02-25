@@ -10,6 +10,7 @@
 
 /* 外部定时器变量 */
 extern volatile uint32_t g_tmr4_milliseconds;
+extern volatile uint32_t g_tmr2_seconds;
 
 /* 全局数据实例 */
 adc_module_data_t g_adc_module;
@@ -98,7 +99,7 @@ static void adc_module_update_flow(void)
         g_adc_module.flow_active = 1;
         printf("[ADC_MOD] 流量开始: %.2f >= %u\r\n",
                g_adc_module.flow_value, g_sampling_cfg.flow_start);
-        scheduler_notify_flow(1);
+        scheduler_notify_flow_start(g_tmr2_seconds);
     }
     else if (g_adc_module.flow_active &&
              g_adc_module.flow_value <= (float)g_sampling_cfg.flow_stop)
@@ -106,7 +107,7 @@ static void adc_module_update_flow(void)
         g_adc_module.flow_active = 0;
         printf("[ADC_MOD] 流量停止: %.2f <= %u\r\n",
                g_adc_module.flow_value, g_sampling_cfg.flow_stop);
-        scheduler_notify_flow(0);
+        scheduler_notify_flow_stop(g_tmr2_seconds);
     }
 }
 

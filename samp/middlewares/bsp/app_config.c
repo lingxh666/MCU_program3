@@ -14,6 +14,9 @@ DeliveryConfig     g_delivery_cfg;
 RetainConfig       g_retain_cfg;
 CommConfig         g_comm_cfg;
 ChannelLimitConfig g_ch_limits[6];
+SystemSettingConfig  g_system_setting_cfg;
+CalibrationParams    g_calib_params;
+RetainBottleState    g_retain_bottle_state;
 
 /* ======================== 默认值 ======================== */
 static const SamplingConfig s_samp_default = {
@@ -70,6 +73,19 @@ static const ChannelLimitConfig s_ch_limit_default = {
     .upper_limit = 0.0f,
 };
 
+static const SystemSettingConfig s_system_default = {
+    .year   = 2026, .month = 1, .day = 1,
+    .hour   = 0,    .minute = 0, .second = 0,
+    .water_station_mode = 0,
+    .auto_run_mode      = 0,
+    .motor_speed        = 100,
+};
+
+static const RetainBottleState s_bottle_default = {
+    .current_bottle = 1,
+    .used_mask      = 0,
+};
+
 /* ======================== 上电加载所有配置 ======================== */
 void cfg_init_load(void)
 {
@@ -114,6 +130,33 @@ void cfg_init_load(void)
         printf("[CFG] 通讯配置: 从KVDB加载\r\n");
     }
 
+    /* 加载系统设置 */
+    if (!cfg_load_system(&g_system_setting_cfg)) {
+        g_system_setting_cfg = s_system_default;
+        cfg_save_system(&g_system_setting_cfg);
+        printf("[CFG] 系统设置: 使用默认值\r\n");
+    } else {
+        printf("[CFG] 系统设置: 从KVDB加载\r\n");
+    }
+
+    /* 加载校准参数 */
+    if (!cfg_load_calib(&g_calib_params)) {
+        memset(&g_calib_params, 0, sizeof(g_calib_params));
+        cfg_save_calib(&g_calib_params);
+        printf("[CFG] 校准参数: 使用默认值\r\n");
+    } else {
+        printf("[CFG] 校准参数: 从KVDB加载\r\n");
+    }
+
+    /* 加载留样瓶位状态 */
+    if (!cfg_load_retain_state(&g_retain_bottle_state)) {
+        g_retain_bottle_state = s_bottle_default;
+        cfg_save_retain_state(&g_retain_bottle_state);
+        printf("[CFG] 瓶位状态: 使用默认值\r\n");
+    } else {
+        printf("[CFG] 瓶位状态: 从KVDB加载\r\n");
+    }
+
     /* 初始化通道限值配置 */
     {
         uint8_t i;
@@ -129,4 +172,7 @@ void cfg_save_all(void)
     cfg_save_delivery(&g_delivery_cfg);
     cfg_save_retain(&g_retain_cfg);
     cfg_save_comm(&g_comm_cfg);
+    cfg_save_system(&g_system_setting_cfg);
+    cfg_save_calib(&g_calib_params);
+    cfg_save_retain_state(&g_retain_bottle_state);
 }

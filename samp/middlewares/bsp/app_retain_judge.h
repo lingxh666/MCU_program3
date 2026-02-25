@@ -51,6 +51,21 @@ void drain_execute_blocking(uint8_t bucket);
 /* 瓶位管理 */
 uint8_t retain_get_next_bottle(void);
 void    retain_advance_bottle(void);
+void    retain_clear_all_bottles(void);
+uint8_t retain_get_bottle_status(uint8_t bottle_1based);
+
+/* 屏幕推送 */
+void    retain_send_current_values_to_screen(void);
+
+/* 统计 */
+typedef struct {
+    uint16_t analog_count;
+    uint16_t flow_count;
+    uint16_t switch_count;
+    uint16_t modbus_count;
+} RetainJudgeStats;
+
+void    retain_judge_get_stats(RetainJudgeStats *out);
 
 #ifdef __cplusplus
 }

@@ -28,6 +28,51 @@ typedef enum {
     PHASE_STOPPED = 3,  /* 已停止(等待恢复) */
 } sched_phase_t;
 
+/* ======================== 时间等比增强（S3-1） ======================== */
+
+/* 时间点 */
+typedef struct {
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t bucket_id;   /* 0=A桶 1=B桶 0xFF=未指定 */
+} TpTimePoint;
+
+/* 操作时段 */
+typedef struct {
+    TpTimePoint sample_time;
+    TpTimePoint delivery_time;
+    int16_t     delay_offset_min;  /* 推迟偏移(分钟) */
+    uint8_t     is_valid;
+} TpOperationSlot;
+
+/* 全天时间表 */
+#define TP_MAX_SLOTS  48   /* 每桶最多48个采样时段 */
+typedef struct {
+    uint8_t       cycle_count;
+    TpTimePoint   cycle_start_times[24];
+    TpTimePoint   delivery_times[24];
+    /* A/B桶采样时段 */
+    uint8_t       bucket_a_sample_count;
+    TpOperationSlot bucket_a_slots[TP_MAX_SLOTS];
+    uint8_t       bucket_b_sample_count;
+    TpOperationSlot bucket_b_slots[TP_MAX_SLOTS];
+    /* 推迟累计 */
+    int16_t       total_delay_offset_min;
+    /* 起始桶 */
+    uint8_t       start_bucket;
+    uint8_t       is_valid;
+} DailyTimeSchedule;
+
+/* 4种启动模式 */
+typedef enum {
+    STARTUP_FULL_SAMPLING     = 0,  /* 满量采样 */
+    STARTUP_INSTANT_DELIVERY  = 1,  /* 瞬时送样 */
+    STARTUP_SKIP_TO_CYCLE     = 2,  /* 跳过到周期 */
+    STARTUP_INSTANT_SAMPLING  = 3,  /* 瞬时采样 */
+} startup_sampling_mode_t;
+
+/* ======================== 通信触发 ======================== */
+
 /* 通信触发请求类型 */
 typedef enum {
     COMM_REQ_NONE     = 0,
@@ -46,19 +91,38 @@ typedef struct {
 
 extern comm_trigger_req_t g_comm_trigger_req;
 
-/* 调度器接口 */
+/* ======================== 调度器接口 ======================== */
+
 void    scheduler_init(sched_mode_t mode);
 void    scheduler_start(void);
 void    scheduler_stop(void);
+void    scheduler_pause(void);
+void    scheduler_resume(void);
 void    scheduler_run(void);          /* Task02调用, 非阻塞 */
 uint8_t scheduler_is_running(void);
 sched_phase_t scheduler_get_phase(void);
+sched_mode_t  scheduler_get_mode(void);
+
+/* 统计查询 */
+uint32_t scheduler_get_total_cycles(void);
+uint32_t scheduler_get_total_samples(void);
+uint32_t scheduler_get_total_deliveries(void);
+uint8_t  scheduler_get_active_bucket(void);
+
+/* 时间等比专用查询 */
+startup_sampling_mode_t scheduler_get_startup_mode(void);
+const DailyTimeSchedule *scheduler_get_daily_schedule(void);
 
 /* 外部事件通知 */
-void scheduler_notify_flow(uint8_t active);
-void scheduler_notify_switch(void);
+void scheduler_notify_flow_start(uint32_t timestamp);
+void scheduler_notify_flow_stop(uint32_t timestamp);
+void scheduler_notify_switch_signal(uint32_t timestamp);
 void scheduler_notify_comm(comm_req_type_t req,
                            uint8_t bucket, uint16_t vol);
+
+/* 流量触发：送样/留样完成回调 */
+void scheduler_flow_delivery_complete(uint8_t bucket_id, uint16_t volume);
+void scheduler_flow_retention_complete(void);
 
 /* 送样完成通知Task04（由调度器内部调用） */
 void scheduler_notify_task4_delivery(uint8_t bucket_id);

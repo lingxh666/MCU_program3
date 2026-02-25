@@ -12,7 +12,20 @@
 #include "bsp_can_motor.h"
 #include "bsp_timer.h"
 #include "app_flashdb.h"
+#include "app_sample_id.h"
+#include "bsp_rtc.h"
 #include <stdio.h>
+#include <string.h>
+
+/* ======================== 水样上下文（A/B桶各一个） ======================== */
+WaterSampleContext g_water_ctx[2];
+
+void water_ctx_reset(uint8_t bucket_id)
+{
+    if (bucket_id < 2) {
+        memset(&g_water_ctx[bucket_id], 0, sizeof(WaterSampleContext));
+    }
+}
 
 /* ======================== 采样上下文 ======================== */
 static struct {
@@ -61,6 +74,13 @@ uint8_t sampling_start(uint8_t bucket, uint8_t is_manual)
     s_samp.measure_sec  = 0;  /* 由体积/转速计算，暂用blowback_sec代替 */
     s_samp.rpm          = g_sampling_cfg.motor_rpm;
     s_samp.result       = 0;
+
+    /* 生成采样ID并初始化水样上下文 */
+    water_ctx_reset(bucket);
+    g_water_ctx[bucket].bucket_id = bucket;
+    g_water_ctx[bucket].valid = 1;
+    sample_id_generate(g_water_ctx[bucket].sample_id,
+                       sizeof(g_water_ctx[bucket].sample_id));
 
     /* 开进水阀 */
     INLET_VALVE_ON();
@@ -162,6 +182,8 @@ void sampling_step(void)
             can_motor_stop(MOTOR_ID_SAMPLING);
             INLET_VALVE_OFF();
             s_samp.result = 1;  /* 成功 */
+            /* 记录完成时间到水样上下文 */
+            g_water_ctx[s_samp.bucket_id].sampling_complete_time = rtc_get_timestamp();
             /* 写入采样记录 */
             {
                 SampleLogData log;
@@ -523,4 +545,75 @@ uint8_t retain_is_active(void)
 {
     return (s_retain.stage != RETAIN_IDLE && s_retain.stage != RETAIN_DONE
             && s_retain.stage != RETAIN_ABORT) ? 1 : 0;
+}
+
+/* ======================== 系统启动序列（S8完整实现） ======================== */
+__attribute__((weak))
+void system_start_sequence(SystemStartMode mode)
+{
+    /* S8批次实现完整启动序列，当前仅打印 */
+    printf("[系统启动] mode=%u (桩函数，S8实现)\r\n", (unsigned)mode);
+}
+
+/* ======================== 桶状态更新 ======================== */
+void update_bucket_state(uint8_t bucket_id, bucket_state_t state)
+{
+    if (bucket_id == 0)
+        g_state.bucket_a_state = (uint8_t)state;
+    else if (bucket_id == 1)
+        g_state.bucket_b_state = (uint8_t)state;
+}
+
+/* ======================== 手动操作影响评估 ======================== */
+void manual_operation_assess_impact(ManualOperationType op, ManualOperationImpact *out)
+{
+    if (out == NULL) return;
+
+    /* 清零输出 */
+    out->operation       = op;
+    out->timestamp       = 0;
+    out->water_delta_a   = 0;
+    out->water_delta_b   = 0;
+    out->skip_sampling   = 0;
+    out->skip_delivery   = 0;
+    out->skip_retention  = 0;
+    out->bottle_changed  = 0;
+    out->bottle_after    = 0;
+    out->has_impact      = 0;
+
+    switch (op) {
+    case MANUAL_SAMPLING:
+    case MANUAL_DELIVERY:
+    case MANUAL_RETENTION:
+    case MANUAL_INSTANT_DELIVERY:
+    case MANUAL_INSTANT_RETENTION:
+        /* 手动采样/送样/留样会影响当前调度 */
+        out->has_impact      = 1;
+        out->skip_sampling   = (op == MANUAL_SAMPLING) ? 1 : 0;
+        out->skip_delivery   = (op == MANUAL_DELIVERY || op == MANUAL_INSTANT_DELIVERY) ? 1 : 0;
+        out->skip_retention  = (op == MANUAL_RETENTION || op == MANUAL_INSTANT_RETENTION) ? 1 : 0;
+        break;
+
+    case MANUAL_BOTTLE_RESET:
+        out->has_impact     = 1;
+        out->bottle_changed = 1;
+        out->bottle_after   = 1;  /* 复位到1号瓶 */
+        break;
+
+    case MANUAL_BOTTLE_MOVE:
+        out->has_impact     = 1;
+        out->bottle_changed = 1;
+        out->bottle_after   = g_retain_bottle_state.current_bottle;
+        break;
+
+    case MANUAL_DRAIN_CONTROL:
+        out->has_impact    = 1;
+        out->water_delta_a = -(int16_t)g_state.water_a;
+        out->water_delta_b = -(int16_t)g_state.water_b;
+        break;
+
+    default:
+        /* MANUAL_MOTOR/PUMP/VALVE/MIXER/SYSTEM_RESET/SYSTEM_START等 */
+        break;
+    }
 }

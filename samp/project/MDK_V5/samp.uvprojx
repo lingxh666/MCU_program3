@@ -852,6 +852,21 @@
               <FilePath>../../middlewares/bsp/app_config.c</FilePath>
             </File>
             <File>
+              <FileName>bsp_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/bsp_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_sample_id.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_sample_id.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_screen_cache.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_screen_cache.c</FilePath>
+            </File>
+            <File>
               <FileName>app_sampling.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../middlewares/bsp/app_sampling.c</FilePath>
