@@ -488,6 +488,15 @@ void my_task04_func(void *pvParameters)
                 drain_execute_blocking(1);
             } else {
                 uint8_t bucket = (uint8_t)(notify_value - 1);
+                /* 写入送样记录 */
+                {
+                    DeliveryLogData dlog;
+                    dlog.trigger_source = 0;
+                    dlog.water_source = (uint8_t)(bucket + 1);
+                    dlog.delivery_volume = 0;
+                    dlog.result = 1;
+                    tsdb_event_append(EVT_DELIVERY_DONE, &dlog, sizeof(dlog));
+                }
                 handle_retain_and_drain(bucket);
             }
         }

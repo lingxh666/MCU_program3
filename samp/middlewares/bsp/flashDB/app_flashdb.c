@@ -33,11 +33,14 @@ static SemaphoreHandle_t g_tsdb_mutex = NULL;
 static fdb_time_t tsdb_time_cb(void)
 {
     ertc_time_type time;
+    uint32_t days;
+    fdb_time_t now_ts;
+
     ertc_calendar_get(&time);
 
     /* 简单秒计数: 年月日时分秒 → 累计秒数(非精确Unix, 仅用于TSDB排序) */
-    uint32_t days = (uint32_t)time.year * 365u + (uint32_t)(time.month - 1) * 30u + (uint32_t)time.day;
-    fdb_time_t now_ts = days * 86400u + (uint32_t)time.hour * 3600u + (uint32_t)time.min * 60u + (uint32_t)time.sec;
+    days = (uint32_t)time.year * 365u + (uint32_t)(time.month - 1) * 30u + (uint32_t)time.day;
+    now_ts = days * 86400u + (uint32_t)time.hour * 3600u + (uint32_t)time.min * 60u + (uint32_t)time.sec;
 
     if (now_ts <= g_tsdb_prev_time)
         now_ts = g_tsdb_prev_time + 1;
@@ -108,16 +111,18 @@ uint8_t cfg_kv_init(void)
 /* ================= Config Save/Load (locked blob wrappers) ================= */
 static uint8_t cfg_save(const char *key, const void *p, size_t len)
 {
+    uint8_t r;
     kvdb_lock();
-    uint8_t r = kv_set_blob(key, p, len);
+    r = kv_set_blob(key, p, len);
     kvdb_unlock();
     return r;
 }
 
 static uint8_t cfg_load(const char *key, void *p, size_t len)
 {
+    uint8_t r;
     kvdb_lock();
-    uint8_t r = kv_get_blob(key, p, len);
+    r = kv_get_blob(key, p, len);
     kvdb_unlock();
     return r;
 }
@@ -148,24 +153,25 @@ uint8_t cfg_reset_all(void)
 /* ================= TSDB: Event Append ================= */
 uint8_t tsdb_event_append(uint16_t event_type, const void *body, size_t body_len)
 {
-    if (!g_tsdb_ready) return 0;
-
-    /* Pack: 2 bytes event_type + body */
     uint8_t buf[256];
+    struct fdb_blob blob;
+    fdb_err_t err;
+
+    if (!g_tsdb_ready) return 0;
     if (body_len + 2 > sizeof(buf)) return 0;
 
+    /* Pack: 2 bytes event_type + body */
     buf[0] = (uint8_t)(event_type & 0xFF);
     buf[1] = (uint8_t)(event_type >> 8);
     if (body_len > 0)
         memcpy(&buf[2], body, body_len);
 
-    struct fdb_blob blob;
     fdb_blob_make(&blob, buf, body_len + 2);
 
     if (g_tsdb_mutex)
         xSemaphoreTake(g_tsdb_mutex, pdMS_TO_TICKS(5000));
 
-    fdb_err_t err = fdb_tsl_append(g_tsdb, &blob);
+    err = fdb_tsl_append(g_tsdb, &blob);
 
     if (g_tsdb_mutex)
         xSemaphoreGive(g_tsdb_mutex);
@@ -177,6 +183,7 @@ uint8_t tsdb_event_append(uint16_t event_type, const void *body, size_t body_len
 typedef struct {
     tsdb_event_iter_cb user_cb;
     void *user_arg;
+    uint8_t stop;       /* 用户回调设置为1可终止遍历 */
 } iter_ctx_t;
 
 static bool tsdb_iter_cb_wrapper(fdb_tsl_t tsl, void *arg)
@@ -184,31 +191,54 @@ static bool tsdb_iter_cb_wrapper(fdb_tsl_t tsl, void *arg)
     iter_ctx_t *ctx = (iter_ctx_t *)arg;
     struct fdb_blob blob;
     uint8_t buf[256];
+    TsdbEventInfo info;
+
+    if (ctx->stop) return true; /* 提前终止 */
 
     fdb_blob_make(&blob, buf, sizeof(buf));
     if (fdb_blob_read((fdb_db_t)g_tsdb, fdb_tsl_to_blob(tsl, &blob)) < 2)
         return false;
 
-    TsdbEventInfo info;
     info.event_type = (uint16_t)buf[0] | ((uint16_t)buf[1] << 8);
     info.ts = tsl->time;
     info.body_len = blob.saved.len - 2;
 
     ctx->user_cb(&info, &buf[2], ctx->user_arg);
     feed_dog();
-    return false; /* continue iteration */
+    return ctx->stop ? true : false;
 }
 
 void tsdb_iter_range(fdb_time_t from, fdb_time_t to, tsdb_event_iter_cb cb, void *user)
 {
+    iter_ctx_t ctx;
     if (!g_tsdb_ready || !cb) return;
 
-    iter_ctx_t ctx = { .user_cb = cb, .user_arg = user };
+    ctx.user_cb  = cb;
+    ctx.user_arg = user;
+    ctx.stop     = 0;
 
     if (g_tsdb_mutex)
         xSemaphoreTake(g_tsdb_mutex, pdMS_TO_TICKS(10000));
 
     fdb_tsl_iter_by_time(g_tsdb, from, to, tsdb_iter_cb_wrapper, &ctx);
+
+    if (g_tsdb_mutex)
+        xSemaphoreGive(g_tsdb_mutex);
+}
+
+void tsdb_iter_reverse_all(tsdb_event_iter_cb cb, void *user)
+{
+    iter_ctx_t ctx;
+    if (!g_tsdb_ready || !cb) return;
+
+    ctx.user_cb  = cb;
+    ctx.user_arg = user;
+    ctx.stop     = 0;
+
+    if (g_tsdb_mutex)
+        xSemaphoreTake(g_tsdb_mutex, pdMS_TO_TICKS(10000));
+
+    fdb_tsl_iter_reverse(g_tsdb, tsdb_iter_cb_wrapper, &ctx);
 
     if (g_tsdb_mutex)
         xSemaphoreGive(g_tsdb_mutex);

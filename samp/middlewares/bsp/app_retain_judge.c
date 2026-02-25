@@ -6,6 +6,7 @@
 #include "app_config.h"
 #include "app_adc_module.h"
 #include "app_sampling.h"
+#include "app_flashdb.h"
 #include "bsp_io.h"
 #include "FreeRTOS.h"
 #include "event_groups.h"
@@ -183,6 +184,17 @@ void retention_execute(uint8_t bucket, uint32_t now_sec)
     while (retain_is_active()) {
         xEventGroupSetBits(my_event01_handle, TASK04_HB_BIT);
         vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    /* 写入留样记录 */
+    {
+        RetainSampleLogData rlog;
+        rlog.trigger_source = 0;
+        rlog.bottle_id = bottle;
+        rlog.retain_volume = 0;
+        rlog.success = 1;
+        rlog.acid_added = 0;
+        tsdb_event_append(EVT_RETAIN_DONE, &rlog, sizeof(rlog));
     }
 
     /* 推进瓶位 */

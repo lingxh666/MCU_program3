@@ -83,6 +83,13 @@ extern "C" {
 #define SCR_ACT_MANUAL_DELIV    0x21  /* 手动送样执行 */
 #define SCR_ACT_MANUAL_RETAIN   0x25  /* 手动留样执行 */
 #define SCR_ACT_BOTTLE_RESET    0x14  /* 留样瓶复位 */
+/* 记录查询 */
+#define SCR_ACT_LOG_QUERY       0x81  /* 查询初始化 */
+#define SCR_ACT_LOG_SAMP        0x71  /* 采样记录翻页 */
+#define SCR_ACT_LOG_DELIV       0x72  /* 送样记录翻页 */
+#define SCR_ACT_LOG_RETAIN      0x73  /* 留样记录翻页 */
+#define SCR_ACT_LOG_POWER       0x74  /* 电源记录翻页 */
+#define SCR_ACT_LOG_DOOR        0x75  /* 门禁记录翻页 */
 
 /* ======================== 状态页回写地址 (0x5200起) ======================== */
 #define SCR_STATUS_BASE         0x5200

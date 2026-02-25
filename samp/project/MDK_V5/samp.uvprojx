@@ -881,6 +881,11 @@
               <FileType>1</FileType>
               <FilePath>../../middlewares/bsp/app_retain_judge.c</FilePath>
             </File>
+            <File>
+              <FileName>app_record_query.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_record_query.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -44,11 +44,21 @@ typedef struct {
   uint32_t usedMask;        /* bit0->bottle1, bit23->bottle24 */
 } RetainBottleState;
 
+/* ===== Event Type 常量 ===== */
+#define EVT_SAMPLE_DONE     0x0040
+#define EVT_DELIVERY_DONE   0x0042
+#define EVT_RETAIN_DONE     0x0044
+#define EVT_DOOR_OPEN       0x0070
+#define EVT_DOOR_CLOSE      0x0071
+#define EVT_POWER_OFF       0x00F2
+#define EVT_POWER_ON        0x00F3
+
 /* ===== TSDB API ===== */
 uint8_t tsdb_event_append(uint16_t event_type, const void *body, size_t body_len);
 
 typedef void (*tsdb_event_iter_cb)(const TsdbEventInfo *info, const void *body, void *user);
 void tsdb_iter_range(fdb_time_t from, fdb_time_t to, tsdb_event_iter_cb cb, void *user);
+void tsdb_iter_reverse_all(tsdb_event_iter_cb cb, void *user);
 
 /* ===== KVDB API ===== */
 uint8_t cfg_kv_init(void);

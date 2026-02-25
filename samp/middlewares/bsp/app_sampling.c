@@ -11,6 +11,7 @@
 #include "bsp_io.h"
 #include "bsp_can_motor.h"
 #include "bsp_timer.h"
+#include "app_flashdb.h"
 #include <stdio.h>
 
 /* ======================== 采样上下文 ======================== */
@@ -161,6 +162,15 @@ void sampling_step(void)
             can_motor_stop(MOTOR_ID_SAMPLING);
             INLET_VALVE_OFF();
             s_samp.result = 1;  /* 成功 */
+            /* 写入采样记录 */
+            {
+                SampleLogData log;
+                log.trigger_source = s_samp.is_manual ? 0 : 1;
+                log.bucket_id = (uint8_t)(s_samp.bucket_id + 1);
+                log.sample_volume = 0;  /* 暂无流量计 */
+                log.result = s_samp.result;
+                tsdb_event_append(EVT_SAMPLE_DONE, &log, sizeof(log));
+            }
             s_samp.stage = SAMP_DONE;
             /* 恢复桶状态 */
             if (s_samp.bucket_id == 0) g_state.bucket_a_state = BUCKET_IDLE;

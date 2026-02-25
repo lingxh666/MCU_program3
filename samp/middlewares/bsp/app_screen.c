@@ -14,6 +14,7 @@
 #include "app_config.h"
 #include "app_sampling.h"
 #include "app_scheduler.h"
+#include "app_record_query.h"
 #include <stdio.h>
 
 /* ======================== 前向声明 ======================== */
@@ -140,6 +141,28 @@ static void screen_handle_confirm(uint8_t sub_cmd, uint16_t value)
         g_state.bottle_current = 0;
         g_state.bottle_next = 1;
         printf("[屏幕] 留样瓶复位\r\n");
+        break;
+    case SCR_ACT_LOG_QUERY: {
+        /* param: 0x71=采样 0x72=送样 0x73=留样 0x74=电源 0x75=门禁 */
+        rq_type_t qt = (rq_type_t)(param - 0x71);
+        if ((uint8_t)qt < RQ_TYPE_COUNT)
+            record_query_init(qt);
+        break;
+    }
+    case SCR_ACT_LOG_SAMP:
+        record_query_page_nav(RQ_SAMPLING, param);
+        break;
+    case SCR_ACT_LOG_DELIV:
+        record_query_page_nav(RQ_DELIVERY, param);
+        break;
+    case SCR_ACT_LOG_RETAIN:
+        record_query_page_nav(RQ_RETAIN, param);
+        break;
+    case SCR_ACT_LOG_POWER:
+        record_query_page_nav(RQ_POWER, param);
+        break;
+    case SCR_ACT_LOG_DOOR:
+        record_query_page_nav(RQ_DOOR, param);
         break;
     default:
         break;
