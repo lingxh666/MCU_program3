@@ -35,6 +35,7 @@
 #include "app_scheduler.h"
 #include "app_4g_modem.h"
 #include "app_mqtt.h"
+#include "app_ota.h"
 #include "app_retain_judge.h"
 #include <string.h>
 /* add user code end private includes */
@@ -530,7 +531,10 @@ void my_task05_func(void *pvParameters)
   /* MQTT初始化 */
   mqtt_init();
 
-  printf("[Task05] 4G/MQTT通信任务启动\r\n");
+  /* OTA初始化 */
+  ota_init();
+
+  printf("[Task05] 4G/MQTT/OTA通信任务启动\r\n");
 
   for (;;)
   {
@@ -543,7 +547,10 @@ void my_task05_func(void *pvParameters)
     /* 3. AD模块数据接收(UART8) */
     adc_module_poll();
 
-    /* 4. 心跳上报 */
+    /* 4. OTA状态机轮询 */
+    ota_poll();
+
+    /* 5. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK05_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(100));

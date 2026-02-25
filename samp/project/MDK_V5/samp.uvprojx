@@ -897,6 +897,11 @@
               <FilePath>../../middlewares/bsp/app_mqtt.c</FilePath>
             </File>
             <File>
+              <FileName>app_ota.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_ota.c</FilePath>
+            </File>
+            <File>
               <FileName>app_scheduler.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../middlewares/bsp/app_scheduler.c</FilePath>
