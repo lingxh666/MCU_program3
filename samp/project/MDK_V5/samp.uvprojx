@@ -887,6 +887,16 @@
               <FilePath>../../middlewares/bsp/app_adc_module.c</FilePath>
             </File>
             <File>
+              <FileName>app_4g_modem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_4g_modem.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_mqtt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../middlewares/bsp/app_mqtt.c</FilePath>
+            </File>
+            <File>
               <FileName>app_scheduler.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../middlewares/bsp/app_scheduler.c</FilePath>

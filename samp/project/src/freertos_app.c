@@ -33,6 +33,8 @@
 #include "app_modbus.h"
 #include "app_adc_module.h"
 #include "app_scheduler.h"
+#include "app_4g_modem.h"
+#include "app_mqtt.h"
 #include "app_retain_judge.h"
 #include <string.h>
 /* add user code end private includes */
@@ -522,25 +524,26 @@ void my_task05_func(void *pvParameters)
   /* AD模块初始化 */
   adc_module_init();
 
-  printf("[Task05] 4G模块通信任务启动\r\n");
+  /* 4G模组初始化 */
+  modem_init();
 
-  static uint8_t rx_buf[UART_DMA_BUF_SIZE];
+  /* MQTT初始化 */
+  mqtt_init();
+
+  printf("[Task05] 4G/MQTT通信任务启动\r\n");
 
   for (;;)
   {
-    /* 1. 轮询4G模块UART接收数据 */
-    if (bsp_uart_rx_available(UART_PORT_4G)) {
-      uint16_t len = bsp_uart_get_rxdata(UART_PORT_4G,
-                                          rx_buf, sizeof(rx_buf));
-      if (len > 0) {
-        /* AT指令应答解析 (后续实现) */
-      }
-    }
+    /* 1. 4G模组状态机轮询 */
+    modem_poll();
 
-    /* 2. AD模块数据接收(UART8) */
+    /* 2. MQTT状态机轮询 */
+    mqtt_poll();
+
+    /* 3. AD模块数据接收(UART8) */
     adc_module_poll();
 
-    /* 3. 心跳上报 */
+    /* 4. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK05_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(100));

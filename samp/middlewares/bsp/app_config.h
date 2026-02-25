@@ -91,6 +91,9 @@ typedef struct {
     uint8_t  device_addr;     /* 设备地址 */
     uint16_t flow_ad_lower;   /* 流量AD下限(0=0-20mA, 非0=4-20mA) */
     float    flow_meter_base; /* 流量计量程(m³/h) */
+    /* MQTT/4G */
+    char     mqtt_ip[32];     /* MQTT服务器IP */
+    char     device_id[24];   /* 设备ID */
 } CommConfig;
 
 /* ======================== 系统设置配置（从KVDB加载） ======================== */
