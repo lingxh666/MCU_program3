@@ -651,19 +651,67 @@ void my_task07_func(void *pvParameters)
   */
 void my_task08_func(void *pvParameters)
 {
+  /* 门锁自动关闭时长(ms) */
+  #define LOCK_OPEN_DURATION_MS  5000u
+  /* 门锁状态 */
+  static uint8_t lock_open = 0;
+  static uint32_t lock_open_tick = 0;
+  static uint32_t door_open_count = 0;
+  static uint32_t door_deny_count = 0;
+
   wiegand_init();
   vTaskDelay(pdMS_TO_TICKS(500));
-  printf("[Task08] 心跳/刷卡任务启动\r\n");
+  printf("[Task08] 门锁/刷卡任务启动\r\n");
 
   for (;;)
   {
-    /* 1. Wiegand刷卡检测 */
-    uint32_t card_id;
-    if (wiegand_get_card_id(&card_id)) {
-      printf("[刷卡] 卡号: %08X\r\n", (unsigned int)card_id);
+    /* 1. Wiegand刷卡检测 + 授权 + 开门 */
+    {
+      uint32_t card_id;
+      if (wiegand_get_card_id(&card_id)) {
+        uint8_t authorized = 0;
+        uint8_t i;
+
+        /* 白名单匹配 */
+        for (i = 0; i < 10; i++) {
+          if (g_system_setting_cfg.card_id[i] != 0 &&
+              g_system_setting_cfg.card_id[i] == card_id)
+          {
+            authorized = 1;
+            break;
+          }
+        }
+
+        if (authorized) {
+          /* 开门 */
+          LOCK_ON();
+          lock_open = 1;
+          lock_open_tick = g_tmr4_milliseconds;
+          door_open_count++;
+
+          /* 记录开门事件 */
+          tsdb_event_append(EVT_DOOR_OPEN, &card_id, sizeof(card_id));
+          printf("[门锁] 授权开门 卡号=%08X 累计=%lu\r\n",
+                 (unsigned)card_id, (unsigned long)door_open_count);
+        } else {
+          door_deny_count++;
+          printf("[门锁] 拒绝 卡号=%08X 累计拒绝=%lu\r\n",
+                 (unsigned)card_id, (unsigned long)door_deny_count);
+        }
+      }
     }
 
-    /* 2. 心跳上报 */
+    /* 2. 门锁自动关闭 */
+    if (lock_open &&
+        (g_tmr4_milliseconds - lock_open_tick) >= LOCK_OPEN_DURATION_MS)
+    {
+      LOCK_OFF();
+      lock_open = 0;
+      tsdb_event_append(EVT_DOOR_CLOSE, NULL, 0);
+      printf("[门锁] 自动关闭\r\n");
+    }
+
+    /* 3. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK08_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(200));
