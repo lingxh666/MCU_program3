@@ -31,6 +31,19 @@ static volatile scr_cmd_t s_cmd_buf[SCR_CMD_BUF_SIZE];
 static volatile uint8_t   s_cmd_wr = 0;  /* ISR 写指针 */
 static volatile uint8_t   s_cmd_rd = 0;  /* Task 读指针 */
 
+/* ======================== 屏幕状态 ======================== */
+static scr_state_t s_scr_state = {
+    SCR_PAGE_UNKNOWN, 0, 0, 0
+};
+
+/* ======================== 外发命令缓冲区 ======================== */
+static scr_out_cmd_t s_out_buf[SCR_OUT_BUF_SIZE];
+static uint8_t s_out_wr = 0;
+static uint8_t s_out_rd = 0;
+
+/* 外部定时器 */
+extern volatile uint32_t g_tmr4_milliseconds;
+
 /* ======================== ISR 回调 ======================== */
 static void screen_isr_callback(uint8_t cmd, uint16_t addr,
                                 const uint8_t *data, uint16_t data_len)
@@ -45,6 +58,15 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
         return;
 
     value = ((uint16_t)data[0] << 8) | data[1];
+
+    /* 页面ID变更检测 */
+    if (addr == SCR_ADDR_PAGE_ID) {
+        if (value <= SCR_PAGE_STATUS)
+            s_scr_state.current_page = (scr_page_id_t)value;
+        else
+            s_scr_state.current_page = SCR_PAGE_UNKNOWN;
+        return;  /* 页面切换不入命令队列 */
+    }
 
     /* 写入环形缓冲区（无锁，单生产者单消费者安全） */
     next = (s_cmd_wr + 1) % SCR_CMD_BUF_SIZE;
@@ -150,19 +172,12 @@ static void screen_handle_confirm(uint8_t sub_cmd, uint16_t value)
         break;
     }
     case SCR_ACT_LOG_SAMP:
-        record_query_page_nav(RQ_SAMPLING, param);
-        break;
     case SCR_ACT_LOG_DELIV:
-        record_query_page_nav(RQ_DELIVERY, param);
-        break;
     case SCR_ACT_LOG_RETAIN:
-        record_query_page_nav(RQ_RETAIN, param);
-        break;
     case SCR_ACT_LOG_POWER:
-        record_query_page_nav(RQ_POWER, param);
-        break;
     case SCR_ACT_LOG_DOOR:
-        record_query_page_nav(RQ_DOOR, param);
+        /* 0x71~0x75 与 RQ_SAMPLING~RQ_DOOR 一一对应 */
+        record_query_page_nav((rq_type_t)(action - SCR_ACT_LOG_SAMP), param);
         break;
     default:
         break;
@@ -244,6 +259,12 @@ void screen_task_init(void)
 {
     screen_init();
     screen_set_cmd_callback(screen_isr_callback);
+    s_scr_state.current_page = SCR_PAGE_HOME;
+    s_scr_state.ready = 0;
+    s_scr_state.home_refresh_tick = 0;
+    s_scr_state.ready_tick = 0;
+    s_out_wr = 0;
+    s_out_rd = 0;
     printf("[屏幕] 初始化完成\r\n");
 }
 
@@ -275,4 +296,87 @@ void screen_update_status(void)
     screen_write_u16(0x523A, g_state.bottle_current);
     screen_write_u16(0x523B, g_state.bottle_next);
     screen_write_u16(0x523C, g_state.bottle_empty);
+}
+
+/* ======================== 主页综合刷新(1s周期) ======================== */
+void screen_refresh_home(void)
+{
+    uint32_t now = g_tmr4_milliseconds;
+
+    /* 非主页不刷新 */
+    if (s_scr_state.current_page != SCR_PAGE_HOME)
+        return;
+
+    /* 1秒节流 */
+    if ((now - s_scr_state.home_refresh_tick) < 1000)
+        return;
+    s_scr_state.home_refresh_tick = now;
+
+    /* 基本状态 */
+    screen_update_status();
+
+    /* 调度器信息 */
+    screen_write_u16(0x5240, (uint16_t)scheduler_get_mode());
+    screen_write_u16(0x5241, (uint16_t)scheduler_get_phase());
+    screen_write_u16(0x5242, scheduler_get_active_bucket());
+    screen_write_u16(0x5243, (uint16_t)scheduler_get_total_cycles());
+    screen_write_u16(0x5244, (uint16_t)scheduler_get_total_samples());
+    screen_write_u16(0x5245, (uint16_t)scheduler_get_total_deliveries());
+}
+
+/* ======================== 页面状态查询 ======================== */
+uint8_t screen_is_on_home_page(void)
+{
+    return (s_scr_state.current_page == SCR_PAGE_HOME) ? 1 : 0;
+}
+
+scr_page_id_t screen_get_current_page(void)
+{
+    return s_scr_state.current_page;
+}
+
+uint8_t screen_is_ready(void)
+{
+    return s_scr_state.ready;
+}
+
+/* ======================== 外发命令队列 ======================== */
+void screen_post_command(scr_out_type_t type, uint16_t addr, uint16_t value)
+{
+    uint8_t next = (s_out_wr + 1) % SCR_OUT_BUF_SIZE;
+    if (next == s_out_rd)
+        return;  /* 满了丢弃 */
+
+    s_out_buf[s_out_wr].type  = type;
+    s_out_buf[s_out_wr].addr  = addr;
+    s_out_buf[s_out_wr].value = value;
+    s_out_wr = next;
+}
+
+void screen_process_outgoing(void)
+{
+    while (s_out_rd != s_out_wr) {
+        scr_out_cmd_t *c = &s_out_buf[s_out_rd];
+        s_out_rd = (s_out_rd + 1) % SCR_OUT_BUF_SIZE;
+
+        switch (c->type) {
+        case SCR_OUT_PAGE_SWITCH:
+            screen_switch_page((uint8_t)c->value);
+            break;
+        case SCR_OUT_POPUP:
+        case SCR_OUT_WRITE_VAR:
+            screen_write_u16(c->addr, c->value);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+/* ======================== 屏幕就绪通知 ======================== */
+void screen_notify_ready(void)
+{
+    s_scr_state.ready = 1;
+    s_scr_state.ready_tick = g_tmr4_milliseconds;
+    printf("[屏幕] 就绪\r\n");
 }

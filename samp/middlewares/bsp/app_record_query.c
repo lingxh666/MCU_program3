@@ -150,14 +150,44 @@ static uint8_t rq_load_page(rq_type_t type, uint16_t page,
 }
 
 /* ======================== 缓存管理 ======================== */
-static uint8_t rq_cache_max_pages(rq_type_t type)
+
+/* 缓存描述符：统一访问各类型的缓存数组/起始页/有效页数 */
+typedef struct {
+    uint8_t  *buf;          /* 缓存数组首地址 */
+    uint16_t *start;        /* 缓存起始页号指针 */
+    uint8_t  *pages;        /* 缓存有效页数指针 */
+    uint8_t   max_pages;    /* 最大缓存页数 */
+    uint8_t   entry_size;   /* 单条记录大小 */
+} cache_desc_t;
+
+/* 获取指定类型的缓存描述符，电源/门禁返回0(不缓存) */
+static uint8_t cache_get_desc(rq_type_t type, cache_desc_t *d)
 {
     switch (type) {
-    case RQ_SAMPLING: return RQ_CACHE_SAMPLING;
-    case RQ_DELIVERY: return RQ_CACHE_DELIVERY;
-    case RQ_RETAIN:   return RQ_CACHE_RETAIN;
-    default:          return 0;
+    case RQ_SAMPLING:
+        d->buf = (uint8_t *)s_cache_samp;  d->start = &s_cache_samp_start;
+        d->pages = &s_cache_samp_pages;     d->max_pages = RQ_CACHE_SAMPLING;
+        d->entry_size = (uint8_t)sizeof(rq_sample_entry_t);
+        return 1;
+    case RQ_DELIVERY:
+        d->buf = (uint8_t *)s_cache_deliv;  d->start = &s_cache_deliv_start;
+        d->pages = &s_cache_deliv_pages;    d->max_pages = RQ_CACHE_DELIVERY;
+        d->entry_size = (uint8_t)sizeof(rq_sample_entry_t);
+        return 1;
+    case RQ_RETAIN:
+        d->buf = (uint8_t *)s_cache_retain; d->start = &s_cache_retain_start;
+        d->pages = &s_cache_retain_pages;   d->max_pages = RQ_CACHE_RETAIN;
+        d->entry_size = (uint8_t)sizeof(rq_retain_entry_t);
+        return 1;
+    default:
+        return 0;  /* 电源/门禁不缓存 */
     }
+}
+
+static uint8_t rq_cache_max_pages(rq_type_t type)
+{
+    cache_desc_t d;
+    return cache_get_desc(type, &d) ? d.max_pages : 0;
 }
 
 static void cache_load_window(rq_type_t type, uint16_t center_page)
@@ -182,42 +212,19 @@ static void cache_load_window(rq_type_t type, uint16_t center_page)
         win_start = (win_end > max_pg) ? (win_end - max_pg) : 0;
     }
 
-    switch (type) {
-    case RQ_SAMPLING:
+    /* 通过描述符统一加载（cache_get_desc已在max_pg检查前保证有效） */
+    {
+        cache_desc_t d;
+        cache_get_desc(type, &d);
         idx = 0;
         for (pg = win_start; pg < win_end; pg++) {
             rq_load_page(type, pg,
-                &s_cache_samp[idx * RQ_PAGE_SIZE],
-                (uint8_t)sizeof(rq_sample_entry_t), NULL);
+                &d.buf[idx * RQ_PAGE_SIZE * d.entry_size],
+                d.entry_size, NULL);
             idx++;
         }
-        s_cache_samp_start = win_start;
-        s_cache_samp_pages = idx;
-        break;
-    case RQ_DELIVERY:
-        idx = 0;
-        for (pg = win_start; pg < win_end; pg++) {
-            rq_load_page(type, pg,
-                &s_cache_deliv[idx * RQ_PAGE_SIZE],
-                (uint8_t)sizeof(rq_sample_entry_t), NULL);
-            idx++;
-        }
-        s_cache_deliv_start = win_start;
-        s_cache_deliv_pages = idx;
-        break;
-    case RQ_RETAIN:
-        idx = 0;
-        for (pg = win_start; pg < win_end; pg++) {
-            rq_load_page(type, pg,
-                &s_cache_retain[idx * RQ_PAGE_SIZE],
-                (uint8_t)sizeof(rq_retain_entry_t), NULL);
-            idx++;
-        }
-        s_cache_retain_start = win_start;
-        s_cache_retain_pages = idx;
-        break;
-    default:
-        break;
+        *d.start = win_start;
+        *d.pages = idx;
     }
 }
 
@@ -232,40 +239,16 @@ static uint8_t cache_get_page(rq_type_t type, uint16_t page,
     if (max_pg == 0)
         return rq_load_page(type, page, buf, entry_size, out_count);
 
-    /* 检查缓存命中 */
-    switch (type) {
-    case RQ_SAMPLING:
-        if (page >= s_cache_samp_start &&
-            page < s_cache_samp_start + s_cache_samp_pages) {
-            offset = (page - s_cache_samp_start) * RQ_PAGE_SIZE;
-            memcpy(buf, &s_cache_samp[offset],
-                   (size_t)RQ_PAGE_SIZE * entry_size);
+    /* 通过描述符统一检查缓存命中 */
+    {
+        cache_desc_t d;
+        cache_get_desc(type, &d);
+        if (page >= *d.start && page < *d.start + *d.pages) {
+            offset = (page - *d.start) * RQ_PAGE_SIZE * d.entry_size;
+            memcpy(buf, &d.buf[offset], (size_t)RQ_PAGE_SIZE * entry_size);
             if (out_count) *out_count = RQ_PAGE_SIZE;
             return RQ_PAGE_SIZE;
         }
-        break;
-    case RQ_DELIVERY:
-        if (page >= s_cache_deliv_start &&
-            page < s_cache_deliv_start + s_cache_deliv_pages) {
-            offset = (page - s_cache_deliv_start) * RQ_PAGE_SIZE;
-            memcpy(buf, &s_cache_deliv[offset],
-                   (size_t)RQ_PAGE_SIZE * entry_size);
-            if (out_count) *out_count = RQ_PAGE_SIZE;
-            return RQ_PAGE_SIZE;
-        }
-        break;
-    case RQ_RETAIN:
-        if (page >= s_cache_retain_start &&
-            page < s_cache_retain_start + s_cache_retain_pages) {
-            offset = (page - s_cache_retain_start) * RQ_PAGE_SIZE;
-            memcpy(buf, &s_cache_retain[offset],
-                   (size_t)RQ_PAGE_SIZE * entry_size);
-            if (out_count) *out_count = RQ_PAGE_SIZE;
-            return RQ_PAGE_SIZE;
-        }
-        break;
-    default:
-        break;
     }
 
     /* 缓存未命中: 重新加载窗口 */
@@ -449,4 +432,32 @@ void record_query_page_nav(rq_type_t type, uint8_t direction)
 
     s_session[type].current_page = (uint8_t)cur;
     notify_page(type, cur);
+
+    /* 智能预加载：翻页后重新加载以当前页为中心的缓存窗口 */
+    if (rq_cache_max_pages(type) > 0)
+        cache_load_window(type, cur);
+}
+
+/* ======================== 实时追加通知 ======================== */
+void record_query_notify_new(rq_type_t type)
+{
+    if ((uint8_t)type >= RQ_TYPE_COUNT) return;
+    if (!s_session[type].valid) return;
+
+    /* 更新总数 */
+    s_session[type].total_count++;
+
+    /* 如果当前在第0页(最新记录页)，重新加载缓存并刷新显示 */
+    if (s_session[type].current_page == 0) {
+        if (rq_cache_max_pages(type) > 0)
+            cache_load_window(type, 0);
+        notify_page(type, 0);
+    }
+}
+
+/* ======================== 会话查询 ======================== */
+uint8_t record_query_is_active(rq_type_t type)
+{
+    if ((uint8_t)type >= RQ_TYPE_COUNT) return 0;
+    return s_session[type].valid;
 }

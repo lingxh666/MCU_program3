@@ -103,10 +103,57 @@ typedef struct {
     uint16_t value;
 } scr_cmd_t;
 
+/* ======================== 页面ID定义 ======================== */
+typedef enum {
+    SCR_PAGE_HOME     = 0,   /* 主页 */
+    SCR_PAGE_SETTINGS = 1,   /* 设置页 */
+    SCR_PAGE_MANUAL   = 2,   /* 手动操作页 */
+    SCR_PAGE_RECORDS  = 3,   /* 记录查询页 */
+    SCR_PAGE_STATUS   = 4,   /* 状态详情页 */
+    SCR_PAGE_UNKNOWN  = 0xFF
+} scr_page_id_t;
+
+/* ======================== 屏幕状态跟踪 ======================== */
+typedef struct {
+    scr_page_id_t current_page;    /* 当前页面 */
+    uint8_t       ready;           /* 屏幕就绪标志 */
+    uint32_t      home_refresh_tick; /* 主页上次刷新时间(ms) */
+    uint32_t      ready_tick;      /* 就绪时间戳 */
+} scr_state_t;
+
+/* ======================== 外发命令队列 ======================== */
+typedef enum {
+    SCR_OUT_NONE       = 0,
+    SCR_OUT_PAGE_SWITCH,     /* 切换页面 */
+    SCR_OUT_POPUP,           /* 弹窗提示 */
+    SCR_OUT_WRITE_VAR        /* 写变量 */
+} scr_out_type_t;
+
+typedef struct {
+    scr_out_type_t type;
+    uint16_t addr;
+    uint16_t value;
+} scr_out_cmd_t;
+
+#define SCR_OUT_BUF_SIZE  8
+
 /* ======================== 屏幕任务接口 ======================== */
 void screen_task_init(void);
 void screen_poll_commands(void);     /* Task03 轮询处理命令 */
 void screen_update_status(void);     /* 周期刷新状态显示 */
+void screen_refresh_home(void);      /* 主页综合刷新(1s周期) */
+
+/* 页面状态查询 */
+uint8_t screen_is_on_home_page(void);
+scr_page_id_t screen_get_current_page(void);
+uint8_t screen_is_ready(void);
+
+/* 外发命令 */
+void screen_post_command(scr_out_type_t type, uint16_t addr, uint16_t value);
+void screen_process_outgoing(void);  /* Task03 轮询发送 */
+
+/* 屏幕就绪通知(ISR安全) */
+void screen_notify_ready(void);
 
 #ifdef __cplusplus
 }

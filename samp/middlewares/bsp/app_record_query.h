@@ -62,6 +62,12 @@ typedef struct {
 void record_query_init(rq_type_t type);
 void record_query_page_nav(rq_type_t type, uint8_t direction);
 
+/* 实时追加：新记录写入后调用，增量更新缓存 */
+void record_query_notify_new(rq_type_t type);
+
+/* 查询会话是否有效 */
+uint8_t record_query_is_active(rq_type_t type);
+
 #ifdef __cplusplus
 }
 #endif
