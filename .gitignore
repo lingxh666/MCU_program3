@@ -1,5 +1,6 @@
 # Build artifacts
 build_log.txt
+build_*.txt
 *.o
 *.d
 *.lst
@@ -21,6 +22,8 @@ build_log.txt
 **/RTE/
 **/DebugConfig/
 *.uvguix.*
+*.uvopt
+*.uvoptx
 *.bak
 *.scvd
 JLinkLog.txt
@@ -40,3 +43,4 @@ desktop.ini
 # Misc
 *.tmp
 *.log
+.tmp_*.txt

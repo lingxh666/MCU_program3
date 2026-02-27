@@ -1,9 +1,15 @@
 # samp vs samplingB 差异对比与 samp 重构完成度清单
 
-更新时间：2026-02-25  
+更新时间：2026-02-27  
 对比对象：
 - `D:\MCU_program3\samp`
 - `D:\MCU_program3\samplingB`
+
+编译验证（2026-02-27，本机 Keil `UV4.exe -b`，0错误0警告）：
+- `samplingB/project/MDK_V5/sampling.uvprojx`：0 Error(s), 0 Warning(s)
+- `samp/project/MDK_V5/samp.uvprojx`：0 Error(s), 0 Warning(s)
+- `samplingB/BOOTLOADER/project/mdk_v5/template.uvprojx`：0 Error(s), 0 Warning(s)
+- `samp/BOOTLOADER/project/mdk_v5/template.uvprojx`：0 Error(s), 0 Warning(s)
 
 > 口径说明（避免误判）  
 > 1) 本文以 **samplingB 的“功能集合/模块划分”** 作为参考系，检查 `samp` 当前实现的对齐情况。  
@@ -15,8 +21,8 @@
 ## 1. 总览结论（先看重点）
 
 ### 1.1 核心差异一句话
-- `samplingB`：**AT32F403A/407 + 功能更全**（Bootloader/OTA、`sample_id`、`sampling_time`、`record_cache`、`screen_cache`、独立触发器模块等）。
-- `samp`：**AT32F435/437 + 按重构计划完成了“业务模块拆分 + 8任务骨架”**（`app_config/app_sampling/app_screen/app_modbus/...`），但与 `samplingB` 相比仍缺少若干关键“能力模块/周边工程”。
+- `samplingB`：**AT32F403A/407 + 更“整机化”的工程集合**（固件 + Bootloader + OTA(含4G/MQTT相关逻辑) + Android/蓝牙/OTA工具等目录）。
+- `samp`：**AT32F435/437 + 更“固件内聚”的重构版本**（`app_*` 业务拆分 + `bsp_*` 驱动拆分 + 8任务骨架 + USB(OTA) + QSPI/FAL/FlashDB），但对外协议/日志/缓存等“能力细节”与 `samplingB` 仍可能存在不一致，需要按验收口径逐项核对。
 
 ### 1.2 `samp` 当前“已完成/部分完成/未完成重构”（按 samplingB 能力基准）
 
@@ -33,13 +39,13 @@
 - 记录查询/缓存：`samp/middlewares/bsp/app_record_query.*` 对标 `samplingB/middlewares/bsp/record_cache.*`，但 samplingB 侧是“滑动窗口 + 智能预加载 + 异步任务 + mutex”的更重实现。
 - FAL(Flash Abstraction Layer) 端口：两边都有 `middlewares/bsp/fal/*`，但 `samp` 使用 `fal_flash_qspi_port.c`，`samplingB` 使用 `fal_flash_spi_nor_port.c`，且核心 `fal_cfg/def/partition` 均存在内容差异（硬件差异 + 分区规划差异叠加）。
 
-**未完成（samplingB 存在明确模块/工程，而 samp 当前缺失或仅有部分替代）**
-- Bootloader 工程：`samplingB/BOOTLOADER/...` 存在；`samp` 当前无对应 Bootloader 工程。
-- OTA 业务模块：`samplingB/middlewares/bsp/ota.*` 存在；`samp` 当前主要是 `project/src/usbh_user.c` 的 U 盘固件校验流程（并且日志提示“等待实现 Flash 写入逻辑”），与 samplingB 的“Bootloader + OTA”形态尚未对齐。
-- `sample_id.*`：samplingB 有“线程安全样本ID生成器”；`samp` 当前无等价模块。
-- `sampling_time.*`：samplingB 有“时间等比调度器/全天时间表”；`samp` 当前无等价模块（调度能力主要在 `app_scheduler` 内实现，复杂度显著不同）。
-- `screen_cache.*`：samplingB 有“屏幕缓存”；`samp` 当前无等价模块。
-- 独立触发器模块：samplingB 有 `Commtrigger/Flowtrigger/Switchtrigger/Timetrigger`；`samp` 当前没有同名文件（触发逻辑更可能内聚在 `app_scheduler`）。
+**未完成/需确认对齐口径（samplingB 存在明确实现，但 samp 的实现形态不同或不在同一目录集合）**
+- 周边工程目录：`samplingB` 的 `androidApp/`、`bluetooth/`、`OTA/`（PC侧工具/服务）在 `samp` 中不存在（`samp` 目前更聚焦固件工程本体）。
+- OTA 形态差异：
+  - `samplingB`：`middlewares/bsp/ota.*` 里包含较多“串口/4G/MQTT/调试缓存”等耦合逻辑。
+  - `samp`：存在 Bootloader 工程（`samp/BOOTLOADER/...`）+ APP侧 `app_ota.*`（包式写Flash+CRC16）+ `project/src/usbh_user.c`（U盘 `firmware.bin` → 写Flash+CRC32 → 写升级标志 → reset）。  
+  需要根据实际验收口径确认：是否要求与 `samplingB` 完全一致的“远程OTA协议/数据格式/上位机交互”。
+- 对外协议/寄存器表/状态码：`samp` 已引入 `app_modbus.*`、`app_sample_id.*`、`app_screen_cache.*` 等模块，但其寄存器映射/状态码/日志字段是否与 `samplingB` 保持兼容，需要以协议文档与上位机联调结果为准。
 
 ---
 
@@ -199,4 +205,3 @@
 - `samp/project/src/usbh_user.c`
 - `samplingB/middlewares/bsp/ota.c`
 - `samplingB/BOOTLOADER/project/src/main.c`
-
