@@ -159,7 +159,7 @@ static void screen_handle_settings(uint8_t sub_cmd, uint16_t value)
     switch (sub_cmd) {
     /* 登录/密码设置（与samplingB兼容） */
     case 0x01:
-        s_login_wait_confirm = 0;
+        /* samplingB 不在0x5001阶段清空登录状态，避免误清密码缓存 */
         break;
     case 0x02:
         s_login_password = value;
