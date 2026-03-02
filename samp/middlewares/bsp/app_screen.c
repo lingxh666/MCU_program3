@@ -41,6 +41,7 @@ static scr_state_t s_scr_state = {
 static scr_out_cmd_t s_out_buf[SCR_OUT_BUF_SIZE];
 static uint8_t s_out_wr = 0;
 static uint8_t s_out_rd = 0;
+static uint8_t s_bootstrap_done = 0;
 
 /* 外部定时器 */
 extern volatile uint32_t g_tmr4_milliseconds;
@@ -253,6 +254,12 @@ static void screen_handle_command(uint16_t addr, uint16_t value)
     uint8_t cmd_type = (uint8_t)(addr >> 8);
     uint8_t sub_cmd  = (uint8_t)(addr & 0xFF);
 
+    if (cmd_type == SCR_CMD_TYPE_SETTINGS || cmd_type == SCR_CMD_TYPE_CALIB) {
+        s_scr_state.current_page = SCR_PAGE_SETTINGS;
+    } else if (cmd_type == SCR_CMD_TYPE_MANUAL) {
+        s_scr_state.current_page = SCR_PAGE_MANUAL;
+    }
+
     switch (cmd_type) {
     case SCR_CMD_TYPE_SETTINGS:
         screen_handle_settings(sub_cmd, value);
@@ -282,11 +289,18 @@ void screen_task_init(void)
     s_scr_state.ready_tick = 0;
     s_out_wr = 0;
     s_out_rd = 0;
+    s_bootstrap_done = 0;
     printf("[屏幕] 初始化完成\r\n");
 }
 
 void screen_bootstrap_on_powerup(void)
 {
+    if (s_bootstrap_done) {
+        printf("[屏幕] 开机同步已完成，忽略重复调用\r\n");
+        return;
+    }
+    s_bootstrap_done = 1;
+
     /* 同步设置页关键参数，按 samplingB 的 0x50xx 地址体系回写 */
     screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_MODE), g_sampling_cfg.mode);
     screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_INTERVAL), g_sampling_cfg.interval_min);
