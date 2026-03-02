@@ -57,6 +57,7 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
 {
     uint16_t value;
     uint8_t next;
+    uint8_t word_count = 0;
 
     /* 只处理写通知 (0x82) 和读应答 (0x83) */
     if (cmd != 0x82 && cmd != 0x83)
@@ -64,7 +65,17 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
     if (data_len < 2)
         return;
 
-    value = ((uint16_t)data[0] << 8) | data[1];
+    /* 兼容DWIN帧：data[0] 可能是字数(通常=0x01) */
+    if (data_len >= 3) {
+        word_count = data[0];
+        if (word_count > 0 && (uint16_t)(1u + (uint16_t)word_count * 2u) <= data_len) {
+            value = ((uint16_t)data[1] << 8) | data[2];
+        } else {
+            value = ((uint16_t)data[0] << 8) | data[1];
+        }
+    } else {
+        value = ((uint16_t)data[0] << 8) | data[1];
+    }
 
     /* 页面ID变更检测（兼容 samplingB 页面字：0x0B/0x15） */
     if (addr == SCR_ADDR_PAGE_ID) {
@@ -81,7 +92,7 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
     }
 
     /* samplingB 的主页通知帧映射：5A A5 06 83 00 00 01 80 00 */
-    if (addr == 0x0000u && value == 0x0180u) {
+    if (addr == 0x0000u && (value == 0x0180u || value == 0x8000u)) {
         s_scr_state.current_page = SCR_PAGE_HOME;
         return;  /* 页面切换不入命令队列 */
     }
