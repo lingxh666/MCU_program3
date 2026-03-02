@@ -74,6 +74,7 @@ extern "C" {
 
 /* ======================== 系统命令 sub_cmd ======================== */
 #define SCR_SUB_SYS_AUTORUN     0xBF  /* 自动运行模式 */
+#define SCR_SUB_SYS_WATER_STATION 0xD4  /* 水站模式 */
 
 /* ======================== 确认命令 action 值 ======================== */
 #define SCR_ACT_RESET           0x00  /* 系统复位 */

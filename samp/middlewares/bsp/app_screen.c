@@ -12,9 +12,12 @@
 #include "app_screen.h"
 #include "bsp_screen.h"
 #include "app_config.h"
+#include "app_flashdb.h"
 #include "app_sampling.h"
 #include "app_scheduler.h"
 #include "app_record_query.h"
+#include "bsp_io.h"
+#include "bsp_can_motor.h"
 #include <stdio.h>
 
 /* ======================== 前向声明 ======================== */
@@ -22,10 +25,12 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
                                 const uint8_t *data, uint16_t data_len);
 static void screen_handle_command(uint16_t addr, uint16_t value);
 static void screen_handle_settings(uint8_t sub_cmd, uint16_t value);
+static void screen_handle_calib(uint8_t sub_cmd, uint16_t value);
 static void screen_handle_manual(uint8_t sub_cmd, uint16_t value);
 static void screen_handle_confirm(uint8_t sub_cmd, uint16_t value);
 static void screen_handle_legacy(uint16_t addr, uint16_t value);
 static uint16_t screen_settings_addr(uint8_t sub_cmd);
+static void screen_manual_reset_defaults(void);
 
 /* ======================== 命令环形缓冲区 ======================== */
 static volatile scr_cmd_t s_cmd_buf[SCR_CMD_BUF_SIZE];
@@ -45,12 +50,45 @@ static uint8_t s_bootstrap_done = 0;
 static uint16_t s_login_password = 0;
 static uint8_t s_login_wait_confirm = 0;
 
+typedef struct {
+    uint8_t sample_bucket;       /* 0=A桶 1=B桶 */
+    uint16_t sample_volume_ml;
+    uint8_t delivery_mode;       /* 0=瞬时 1=A桶 2=B桶 */
+    uint16_t delivery_volume_ml;
+    uint8_t retain_mode;         /* 0=瞬时 1=A桶 2=B桶 */
+    uint16_t retain_volume_ml;
+    uint8_t bottle_number;       /* 1..24 */
+} scr_manual_ctx_t;
+
+static scr_manual_ctx_t s_manual_ctx = {
+    0, 0, 1, 0, 1, 0, 1
+};
+
 /* 外部定时器 */
 extern volatile uint32_t g_tmr4_milliseconds;
 
 static uint16_t screen_settings_addr(uint8_t sub_cmd)
 {
     return (uint16_t)(((uint16_t)SCR_CMD_TYPE_SETTINGS << 8) | sub_cmd);
+}
+
+static void screen_manual_reset_defaults(void)
+{
+    s_manual_ctx.sample_bucket = (g_state.current_bucket <= 1) ? g_state.current_bucket : 0;
+    s_manual_ctx.sample_volume_ml = g_sampling_cfg.volume_ml;
+
+    s_manual_ctx.delivery_mode = (s_manual_ctx.sample_bucket == 0) ? 1 : 2;
+    s_manual_ctx.delivery_volume_ml = g_delivery_cfg.volume_ml;
+
+    s_manual_ctx.retain_mode = (s_manual_ctx.sample_bucket == 0) ? 1 : 2;
+    s_manual_ctx.retain_volume_ml = g_retain_cfg.volume_ml;
+
+    if (g_retain_bottle_state.current_bottle >= 1 &&
+        g_retain_bottle_state.current_bottle <= 24) {
+        s_manual_ctx.bottle_number = g_retain_bottle_state.current_bottle;
+    } else {
+        s_manual_ctx.bottle_number = 1;
+    }
 }
 
 /* ======================== ISR 回调 ======================== */
@@ -112,6 +150,12 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
 /* ======================== 新体系: 设置类命令 ======================== */
 static void screen_handle_settings(uint8_t sub_cmd, uint16_t value)
 {
+    uint8_t save_sample = 0;
+    uint8_t save_delivery = 0;
+    uint8_t save_retain = 0;
+    uint8_t save_comm = 0;
+    uint8_t save_system = 0;
+
     switch (sub_cmd) {
     /* 登录/密码设置（与samplingB兼容） */
     case 0x01:
@@ -122,50 +166,429 @@ static void screen_handle_settings(uint8_t sub_cmd, uint16_t value)
         s_login_wait_confirm = 1;
         printf("[屏幕] 登录密码缓存=0x%04X\r\n", (unsigned int)s_login_password);
         break;
+    case 0x04:
+        /* 兼容部分页面将确认动作写到0x5004 */
+        screen_handle_confirm(0, value);
+        break;
     /* 采样设置 */
-    case SCR_SUB_SAMP_MODE:      g_sampling_cfg.mode = (uint8_t)value; break;
-    case SCR_SUB_SAMP_INTERVAL:  g_sampling_cfg.interval_min = value; break;
-    case SCR_SUB_SAMP_VOLUME:    g_sampling_cfg.volume_ml = value; break;
-    case SCR_SUB_SAMP_BLOWBACK:  g_sampling_cfg.blowback_sec = value; break;
-    case SCR_SUB_SAMP_IMPROVE:   g_sampling_cfg.improve_sec = value; break;
-    case SCR_SUB_SAMP_TUBEHOLD:  g_sampling_cfg.tube_hold_sec = value; break;
-    case SCR_SUB_SAMP_CYCLETIME: g_sampling_cfg.cycle_time_min = value; break;
-    case SCR_SUB_SAMP_ANALYSIS:  g_sampling_cfg.analysis_time_min = value; break;
-    case SCR_SUB_SAMP_FLOWSTART: g_sampling_cfg.flow_start = value; break;
-    case SCR_SUB_SAMP_FLOWSTOP:  g_sampling_cfg.flow_stop = value; break;
+    case SCR_SUB_SAMP_MODE:
+        if (g_sampling_cfg.mode != (uint8_t)value) {
+            g_sampling_cfg.mode = (uint8_t)value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_INTERVAL:
+        if (g_sampling_cfg.interval_min != value) {
+            g_sampling_cfg.interval_min = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_VOLUME:
+        if (g_sampling_cfg.volume_ml != value) {
+            g_sampling_cfg.volume_ml = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_BLOWBACK:
+        if (g_sampling_cfg.blowback_sec != value) {
+            g_sampling_cfg.blowback_sec = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_IMPROVE:
+        if (g_sampling_cfg.improve_sec != value) {
+            g_sampling_cfg.improve_sec = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_TUBEHOLD:
+        if (g_sampling_cfg.tube_hold_sec != value) {
+            g_sampling_cfg.tube_hold_sec = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_CYCLETIME:
+        if (g_sampling_cfg.cycle_time_min != value) {
+            g_sampling_cfg.cycle_time_min = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_ANALYSIS:
+        if (g_sampling_cfg.analysis_time_min != value) {
+            g_sampling_cfg.analysis_time_min = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_FLOWSTART:
+        if (g_sampling_cfg.flow_start != value) {
+            g_sampling_cfg.flow_start = value;
+            save_sample = 1;
+        }
+        break;
+    case SCR_SUB_SAMP_FLOWSTOP:
+        if (g_sampling_cfg.flow_stop != value) {
+            g_sampling_cfg.flow_stop = value;
+            save_sample = 1;
+        }
+        break;
     /* 送样设置 */
-    case SCR_SUB_DELIV_HOUR:     g_delivery_cfg.start_hour = (uint8_t)value; break;
-    case SCR_SUB_DELIV_MIN:      g_delivery_cfg.start_min = (uint8_t)value; break;
-    case SCR_SUB_DELIV_DURATION: g_delivery_cfg.duration_sec = value; break;
-    case SCR_SUB_DELIV_BACKDRAW: g_delivery_cfg.backdraw_sec = value; break;
-    case SCR_SUB_DELIV_ENABLE:   g_delivery_cfg.enable = (uint8_t)value; break;
+    case SCR_SUB_DELIV_HOUR:
+        if (g_delivery_cfg.start_hour != (uint8_t)value) {
+            g_delivery_cfg.start_hour = (uint8_t)value;
+            save_delivery = 1;
+        }
+        break;
+    case SCR_SUB_DELIV_MIN:
+        if (g_delivery_cfg.start_min != (uint8_t)value) {
+            g_delivery_cfg.start_min = (uint8_t)value;
+            save_delivery = 1;
+        }
+        break;
+    case SCR_SUB_DELIV_DURATION:
+        if (g_delivery_cfg.duration_sec != value) {
+            g_delivery_cfg.duration_sec = value;
+            save_delivery = 1;
+        }
+        break;
+    case SCR_SUB_DELIV_BACKDRAW:
+        if (g_delivery_cfg.backdraw_sec != value) {
+            g_delivery_cfg.backdraw_sec = value;
+            save_delivery = 1;
+        }
+        break;
+    case SCR_SUB_DELIV_ENABLE:
+        if (g_delivery_cfg.enable != (uint8_t)value) {
+            g_delivery_cfg.enable = (uint8_t)value;
+            save_delivery = 1;
+        }
+        break;
     /* 留样设置 */
-    case SCR_SUB_RETAIN_MODE:    g_retain_cfg.mode = (uint8_t)value; break;
-    case SCR_SUB_RETAIN_VOLUME:  g_retain_cfg.volume_ml = value; break;
-    case SCR_SUB_RETAIN_PARALLEL:g_retain_cfg.parallel_count = (uint8_t)value; break;
-    case SCR_SUB_RETAIN_MIX:     g_retain_cfg.mix_count = (uint8_t)value; break;
-    case SCR_SUB_RETAIN_BLOWBACK:g_retain_cfg.blowback_sec = value; break;
-    case SCR_SUB_RETAIN_ENABLE:  g_retain_cfg.enable = (uint8_t)value; break;
-    case SCR_SUB_RETAIN_ACID:    g_retain_cfg.enable_acid = (uint8_t)value; break;
-    case SCR_SUB_RETAIN_TUBEHOLD:g_retain_cfg.tube_hold_sec = value; break;
-    case SCR_SUB_RETAIN_BACKDRAW:g_retain_cfg.backdraw_sec = value; break;
+    case SCR_SUB_RETAIN_MODE:
+        if (g_retain_cfg.mode != (uint8_t)value) {
+            g_retain_cfg.mode = (uint8_t)value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_VOLUME:
+        if (g_retain_cfg.volume_ml != value) {
+            g_retain_cfg.volume_ml = value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_PARALLEL:
+        if (g_retain_cfg.parallel_count != (uint8_t)value) {
+            g_retain_cfg.parallel_count = (uint8_t)value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_MIX:
+        if (g_retain_cfg.mix_count != (uint8_t)value) {
+            g_retain_cfg.mix_count = (uint8_t)value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_BLOWBACK:
+        if (g_retain_cfg.blowback_sec != value) {
+            g_retain_cfg.blowback_sec = value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_ENABLE:
+        if (g_retain_cfg.enable != (uint8_t)value) {
+            g_retain_cfg.enable = (uint8_t)value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_ACID:
+        if (g_retain_cfg.enable_acid != (uint8_t)value) {
+            g_retain_cfg.enable_acid = (uint8_t)value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_TUBEHOLD:
+        if (g_retain_cfg.tube_hold_sec != value) {
+            g_retain_cfg.tube_hold_sec = value;
+            save_retain = 1;
+        }
+        break;
+    case SCR_SUB_RETAIN_BACKDRAW:
+        if (g_retain_cfg.backdraw_sec != value) {
+            g_retain_cfg.backdraw_sec = value;
+            save_retain = 1;
+        }
+        break;
     /* 通讯设置 */
-    case SCR_SUB_COMM_PROTOCOL:  g_comm_cfg.protocol = (uint8_t)value; break;
-    case SCR_SUB_COMM_ADDR:      g_comm_cfg.device_addr = (uint8_t)value; break;
-    case SCR_SUB_COMM_FLOWLOWER: g_comm_cfg.flow_ad_lower = value; break;
+    case SCR_SUB_COMM_PROTOCOL:
+        if (g_comm_cfg.protocol != (uint8_t)value) {
+            g_comm_cfg.protocol = (uint8_t)value;
+            save_comm = 1;
+        }
+        break;
+    case SCR_SUB_COMM_ADDR:
+        if (g_comm_cfg.device_addr != (uint8_t)value) {
+            g_comm_cfg.device_addr = (uint8_t)value;
+            save_comm = 1;
+        }
+        break;
+    case SCR_SUB_COMM_FLOWLOWER:
+        if (g_comm_cfg.flow_ad_lower != value) {
+            g_comm_cfg.flow_ad_lower = value;
+            save_comm = 1;
+        }
+        break;
+    case SCR_SUB_SYS_AUTORUN:
+        if (g_system_setting_cfg.auto_run_mode != (uint8_t)value) {
+            g_system_setting_cfg.auto_run_mode = (uint8_t)value;
+            save_system = 1;
+        }
+        break;
+    case SCR_SUB_SYS_WATER_STATION:
+        if (g_system_setting_cfg.water_station_mode != (uint8_t)value) {
+            g_system_setting_cfg.water_station_mode = (uint8_t)value;
+            save_system = 1;
+        }
+        break;
     default: break;
+    }
+
+    if (save_sample) {
+        cfg_save_sample(&g_sampling_cfg);
+        printf("[屏幕] 采样设置已写入KVDB\r\n");
+    }
+    if (save_delivery) {
+        cfg_save_delivery(&g_delivery_cfg);
+        printf("[屏幕] 送样设置已写入KVDB\r\n");
+    }
+    if (save_retain) {
+        cfg_save_retain(&g_retain_cfg);
+        printf("[屏幕] 留样设置已写入KVDB\r\n");
+    }
+    if (save_comm) {
+        cfg_save_comm(&g_comm_cfg);
+        printf("[屏幕] 通讯设置已写入KVDB\r\n");
+    }
+    if (save_system) {
+        cfg_save_system(&g_system_setting_cfg);
+        printf("[屏幕] 系统设置已写入KVDB\r\n");
+    }
+}
+
+static void screen_handle_calib(uint8_t sub_cmd, uint16_t value)
+{
+    uint8_t changed = 0;
+
+    switch (sub_cmd) {
+    case 0x10: if (g_calib_params.sampling.time1 != value) { g_calib_params.sampling.time1 = value; changed = 1; } break;
+    case 0x11: if (g_calib_params.sampling.real_value1 != value) { g_calib_params.sampling.real_value1 = value; changed = 1; } break;
+    case 0x12: if (g_calib_params.sampling.time2 != value) { g_calib_params.sampling.time2 = value; changed = 1; } break;
+    case 0x13: if (g_calib_params.sampling.real_value2 != value) { g_calib_params.sampling.real_value2 = value; changed = 1; } break;
+    case 0x14: if (g_calib_params.sampling.time3 != value) { g_calib_params.sampling.time3 = value; changed = 1; } break;
+    case 0x15: if (g_calib_params.sampling.real_value3 != value) { g_calib_params.sampling.real_value3 = value; changed = 1; } break;
+
+    case 0x16: if (g_calib_params.retain.time1 != value) { g_calib_params.retain.time1 = value; changed = 1; } break;
+    case 0x17: if (g_calib_params.retain.real_value1 != value) { g_calib_params.retain.real_value1 = value; changed = 1; } break;
+    case 0x18: if (g_calib_params.retain.time2 != value) { g_calib_params.retain.time2 = value; changed = 1; } break;
+    case 0x19: if (g_calib_params.retain.real_value2 != value) { g_calib_params.retain.real_value2 = value; changed = 1; } break;
+    case 0x1A: if (g_calib_params.retain.time3 != value) { g_calib_params.retain.time3 = value; changed = 1; } break;
+    case 0x1B: if (g_calib_params.retain.real_value3 != value) { g_calib_params.retain.real_value3 = value; changed = 1; } break;
+
+    case 0x1C: if (g_calib_params.acid.time1 != value) { g_calib_params.acid.time1 = value; changed = 1; } break;
+    case 0x1D: if (g_calib_params.acid.real_value1 != value) { g_calib_params.acid.real_value1 = value; changed = 1; } break;
+    case 0x1E: if (g_calib_params.acid.time2 != value) { g_calib_params.acid.time2 = value; changed = 1; } break;
+    case 0x1F: if (g_calib_params.acid.real_value2 != value) { g_calib_params.acid.real_value2 = value; changed = 1; } break;
+    case 0x20: if (g_calib_params.acid.time3 != value) { g_calib_params.acid.time3 = value; changed = 1; } break;
+    case 0x21: if (g_calib_params.acid.real_value3 != value) { g_calib_params.acid.real_value3 = value; changed = 1; } break;
+
+    case 0x40: if (g_calib_params.temp.input_ad != value) { g_calib_params.temp.input_ad = value; changed = 1; } break;
+    case 0x41: if (g_calib_params.temp.zero_point_ad != value) { g_calib_params.temp.zero_point_ad = value; changed = 1; } break;
+    case 0x42: if (g_calib_params.temp.calib_ad != value) { g_calib_params.temp.calib_ad = value; changed = 1; } break;
+    case 0x43: if (g_calib_params.temp.calib_value != value) { g_calib_params.temp.calib_value = value; changed = 1; } break;
+    case 0x44: if (g_calib_params.temp.set_temp != value) { g_calib_params.temp.set_temp = value; changed = 1; } break;
+    case 0x45: if (g_calib_params.temp.upper_dev != value) { g_calib_params.temp.upper_dev = value; changed = 1; } break;
+    case 0x46: if (g_calib_params.temp.lower_dev != value) { g_calib_params.temp.lower_dev = value; changed = 1; } break;
+    case 0x47: if (g_calib_params.temp.zero_temp != value) { g_calib_params.temp.zero_temp = value; changed = 1; } break;
+    default:
+        break;
+    }
+
+    if (changed) {
+        cfg_save_calib(&g_calib_params);
+        printf("[屏幕] 校准参数已写入KVDB\r\n");
     }
 }
 
 /* ======================== 新体系: 手动控制命令 ======================== */
 static void screen_handle_manual(uint8_t sub_cmd, uint16_t value)
 {
+    uint8_t action = (uint8_t)(value & 0xFF);
+
     switch (sub_cmd) {
+    case 0x00: /* 采样蠕动泵 */
+        if (action == 0x00) {
+            can_motor_stop(MOTOR_ID_SAMPLING);
+            g_state.sampling_motor = 0;
+        } else if (action == 0x01 || action == 0x02) {
+            can_motor_set_speed(MOTOR_ID_SAMPLING, g_sampling_cfg.motor_rpm,
+                                (action == 0x01) ? MOTOR_DIR_CW : MOTOR_DIR_CCW);
+            can_motor_start(MOTOR_ID_SAMPLING);
+            g_state.sampling_motor = action;
+        }
+        break;
+    case 0x01: /* 送样蠕动泵 */
+        if (action == 0x00) {
+            can_motor_stop(MOTOR_ID_DELIVERY);
+            g_state.delivery_motor = 0;
+        } else if (action == 0x01 || action == 0x02) {
+            can_motor_set_speed(MOTOR_ID_DELIVERY, g_delivery_cfg.motor_rpm,
+                                (action == 0x01) ? MOTOR_DIR_CW : MOTOR_DIR_CCW);
+            can_motor_start(MOTOR_ID_DELIVERY);
+            g_state.delivery_motor = action;
+        }
+        break;
+    case 0x02: /* 进水三通阀(硬件仅开关，动作1/2均视为打开) */
+        if (action == 0x00) {
+            INLET_VALVE_OFF();
+            g_state.inlet_valve = 0;
+        } else if (action == 0x01 || action == 0x02) {
+            INLET_VALVE_ON();
+            g_state.inlet_valve = action;
+        }
+        break;
+    case 0x03: /* 出水三通阀 */
+        if (action == 0x00) {
+            OUTLET_VALVE_A_OFF();
+            OUTLET_VALVE_B_OFF();
+        } else if (action == 0x01) {
+            OUTLET_VALVE_A_ON();
+            OUTLET_VALVE_B_OFF();
+        } else if (action == 0x02) {
+            OUTLET_VALVE_A_OFF();
+            OUTLET_VALVE_B_ON();
+        }
+        g_state.outlet_valve = action;
+        break;
+    case 0x04: /* 送/留样阀 */
+        if (action == 0x00) {
+            DELIVER_VALVE_OFF();
+            g_state.sample_valve = 0;
+        } else if (action == 0x01) {
+            DELIVER_VALVE_ON();
+            g_state.sample_valve = 1;
+        }
+        break;
+    case 0x05: /* 瞬时三通阀 */
+        if (action == 0x00) {
+            INSTANT_VALVE_OFF();
+            g_state.instant_valve = 0;
+        } else if (action == 0x01) {
+            INSTANT_VALVE_ON();
+            g_state.instant_valve = 1;
+        }
+        break;
+    case 0x07: /* 外接泵 */
+        if (action == 0x00) {
+            EXT_PUMP_OFF();
+        } else if (action == 0x01) {
+            EXT_PUMP_ON();
+        }
+        break;
+    case 0x08: /* A桶搅拌 */
+        if (action == 0x00) {
+            STIR_A_OFF();
+        } else if (action == 0x01) {
+            STIR_A_ON();
+        }
+        break;
+    case 0x09: /* B桶搅拌 */
+        if (action == 0x00) {
+            STIR_B_OFF();
+        } else if (action == 0x01) {
+            STIR_B_ON();
+        }
+        break;
     case 0x0A: /* A桶排水 */
-        if (value) drain_start(0);
+        if (action == 0x00) {
+            DRAIN_A_OFF();
+            g_state.drain_a = 0;
+        } else if (action == 0x01) {
+            if (!drain_start(0)) {
+                DRAIN_A_ON();
+            }
+            g_state.drain_a = 1;
+        }
         break;
     case 0x0B: /* B桶排水 */
-        if (value) drain_start(1);
+        if (action == 0x00) {
+            DRAIN_B_OFF();
+            g_state.drain_b = 0;
+        } else if (action == 0x01) {
+            if (!drain_start(1)) {
+                DRAIN_B_ON();
+            }
+            g_state.drain_b = 1;
+        }
+        break;
+    case 0x0C: /* 门锁 */
+        if (action == 0x00 || action == 0x01) {
+            LOCK_ON();
+        } else {
+            LOCK_OFF();
+        }
+        break;
+    case 0x12: /* 手动采样AB桶选择 */
+        if (action == 0x01) {
+            s_manual_ctx.sample_bucket = 0;
+        } else if (action == 0x02) {
+            s_manual_ctx.sample_bucket = 1;
+        }
+        g_state.current_bucket = s_manual_ctx.sample_bucket;
+        break;
+    case 0x13: /* 手动采样量 */
+        if (value > 0) {
+            s_manual_ctx.sample_volume_ml = value;
+        }
+        break;
+    case 0x14: /* 手动送样模式 */
+        if (action <= 0x02) {
+            s_manual_ctx.delivery_mode = action;
+        }
+        break;
+    case 0x15: /* 手动送样量 */
+        if (value > 0) {
+            s_manual_ctx.delivery_volume_ml = value;
+        }
+        break;
+    case 0x16: /* 手动留样模式 */
+        if (action <= 0x02) {
+            s_manual_ctx.retain_mode = action;
+        }
+        break;
+    case 0x17: /* 手动留样量 */
+        if (value > 0) {
+            s_manual_ctx.retain_volume_ml = value;
+        }
+        break;
+    case 0x18: /* 选择留样瓶号 */
+        if (action >= 1 && action <= 24) {
+            s_manual_ctx.bottle_number = action;
+            g_state.bottle_next = action;
+        }
+        break;
+    case 0x19: /* 转到留样瓶号 */
+        if (action >= 1 && action <= 24) {
+            s_manual_ctx.bottle_number = action;
+            g_state.bottle_current = action;
+            g_state.bottle_next = action;
+            g_retain_bottle_state.current_bottle = action;
+            cfg_save_retain_state(&g_retain_bottle_state);
+            cfg_save_retain(&g_retain_cfg);
+        }
+        break;
+    case 0x1A: /* 排空留样瓶(清空使用标记) */
+        if (action >= 1 && action <= 24) {
+            g_retain_bottle_state.used_mask &= ~(1UL << (action - 1));
+            cfg_save_retain_state(&g_retain_bottle_state);
+        }
         break;
     default:
         printf("[屏幕] 手动命令: sub=0x%02X val=%u\r\n",
@@ -194,27 +617,90 @@ static void screen_handle_confirm(uint8_t sub_cmd, uint16_t value)
     case SCR_ACT_ESTOP:
         g_state.running = 0;
         scheduler_stop();
+        sampling_abort();
+        can_motor_stop(MOTOR_ID_DELIVERY);
+        can_motor_stop(MOTOR_ID_TURNTABLE);
+        INLET_VALVE_OFF();
+        INSTANT_VALVE_OFF();
+        DELIVER_VALVE_OFF();
+        DRAIN_A_OFF();
+        DRAIN_B_OFF();
+        STIR_A_OFF();
+        STIR_B_OFF();
+        EXT_PUMP_OFF();
+        g_state.sampling_motor = 0;
+        g_state.delivery_motor = 0;
+        g_state.inlet_valve = 0;
+        g_state.instant_valve = 0;
+        g_state.sample_valve = 0;
+        g_state.drain_a = 0;
+        g_state.drain_b = 0;
         printf("[屏幕] 紧急停止\r\n");
         break;
     case SCR_ACT_MANUAL_SAMP:
-        sampling_start(g_state.current_bucket, 1);
+        if (param == 0x01) {
+            if (!sampling_start(s_manual_ctx.sample_bucket, 1)) {
+                printf("[屏幕] 手动采样启动失败(状态忙)\r\n");
+            } else {
+                printf("[屏幕] 手动采样启动: bucket=%u volume=%u\r\n",
+                       (unsigned int)(s_manual_ctx.sample_bucket + 1),
+                       (unsigned int)s_manual_ctx.sample_volume_ml);
+            }
+        }
+        break;
+    case SCR_ACT_MANUAL_DELIV:
+        if (param == 0x01) {
+            uint8_t bucket = s_manual_ctx.sample_bucket;
+            if (s_manual_ctx.delivery_mode == 1) {
+                bucket = 0;
+            } else if (s_manual_ctx.delivery_mode == 2) {
+                bucket = 1;
+            }
+            if (!delivery_start(bucket, 1)) {
+                printf("[屏幕] 手动送样启动失败(状态忙)\r\n");
+            } else {
+                printf("[屏幕] 手动送样启动: mode=%u bucket=%u volume=%u\r\n",
+                       (unsigned int)s_manual_ctx.delivery_mode,
+                       (unsigned int)(bucket + 1),
+                       (unsigned int)s_manual_ctx.delivery_volume_ml);
+            }
+        }
+        break;
+    case SCR_ACT_MANUAL_RETAIN:
+        if (param == 0x01) {
+            if (!retain_start(s_manual_ctx.bottle_number, 1)) {
+                printf("[屏幕] 手动留样启动失败(状态忙)\r\n");
+            } else {
+                g_retain_bottle_state.current_bottle = s_manual_ctx.bottle_number;
+                cfg_save_retain_state(&g_retain_bottle_state);
+                printf("[屏幕] 手动留样启动: mode=%u bottle=%u volume=%u\r\n",
+                       (unsigned int)s_manual_ctx.retain_mode,
+                       (unsigned int)s_manual_ctx.bottle_number,
+                       (unsigned int)s_manual_ctx.retain_volume_ml);
+            }
+        }
         break;
     case SCR_ACT_BOTTLE_RESET:
-        g_state.bottle_current = 0;
+        g_state.bottle_current = 1;
         g_state.bottle_next = 1;
+        g_retain_bottle_state.current_bottle = 1;
+        g_retain_bottle_state.used_mask = 0;
+        cfg_save_retain_state(&g_retain_bottle_state);
         printf("[屏幕] 留样瓶复位\r\n");
         break;
     case SCR_ACT_LOGIN_CONFIRM:
         if (param == 0x01) {
+            if (!s_login_wait_confirm) {
+                printf("[屏幕] 登录确认被忽略: 无待确认密码\r\n");
+                break;
+            }
             uint8_t page = SCR_PANEL_PAGE_LOGIN_FAIL;
-            if (s_login_wait_confirm) {
-                if (s_login_password == 0x091A) {
-                    page = SCR_PANEL_PAGE_ADMIN;
-                } else if (s_login_password == 0x1A0A) {
-                    page = SCR_PANEL_PAGE_OPERATOR;
-                } else if (s_login_password == 0x0000) {
-                    page = SCR_PANEL_PAGE_SAMPLER;
-                }
+            if (s_login_password == 0x091A) {
+                page = SCR_PANEL_PAGE_ADMIN;
+            } else if (s_login_password == 0x1A0A) {
+                page = SCR_PANEL_PAGE_OPERATOR;
+            } else if (s_login_password == 0x0000) {
+                page = SCR_PANEL_PAGE_SAMPLER;
             }
             s_scr_state.current_page = SCR_PAGE_SETTINGS;
             screen_switch_page(page);
@@ -306,6 +792,9 @@ static void screen_handle_command(uint16_t addr, uint16_t value)
     case SCR_CMD_TYPE_SETTINGS:
         screen_handle_settings(sub_cmd, value);
         break;
+    case SCR_CMD_TYPE_CALIB:
+        screen_handle_calib(sub_cmd, value);
+        break;
     case SCR_CMD_TYPE_MANUAL:
         screen_handle_manual(sub_cmd, value);
         break;
@@ -334,6 +823,7 @@ void screen_task_init(void)
     s_bootstrap_done = 0;
     s_login_password = 0;
     s_login_wait_confirm = 0;
+    screen_manual_reset_defaults();
     printf("[屏幕] 初始化完成\r\n");
 }
 
