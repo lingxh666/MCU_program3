@@ -1,12 +1,16 @@
 #include "bsp_uart.h"
 #include <string.h>
+#include <stdio.h>
 
 /* UART外设与DMA通道映射表 */
-static usart_type * const uart_periph[UART_PORT_COUNT] = {
+/* 串口屏端口交换标志 */
+uint8_t bsp_uart_screen_swapped = 0;
+
+static usart_type * uart_periph[UART_PORT_COUNT] = {
   USART2, USART3, UART4, UART5, USART6, UART7, UART8
 };
 
-static dma_channel_type * const uart_dma_ch[UART_PORT_COUNT] = {
+static dma_channel_type * uart_dma_ch[UART_PORT_COUNT] = {
   DMA1_CHANNEL1, DMA1_CHANNEL2, DMA1_CHANNEL3, DMA1_CHANNEL4,
   DMA1_CHANNEL5, DMA1_CHANNEL6, DMA1_CHANNEL7
 };
@@ -25,6 +29,18 @@ static uart_rx_callback_t uart_rx_cb[UART_PORT_COUNT];
 void bsp_uart_init(void)
 {
   uint8_t i;
+
+  /* 检测PE13电平，低电平则串口屏改用UART5（UART4空闲） */
+  if(gpio_input_data_bit_read(GPIOE, GPIO_PINS_13) == RESET)
+  {
+    uart_periph[UART_PORT_SCREEN] = UART5;
+    uart_dma_ch[UART_PORT_SCREEN] = DMA1_CHANNEL4;
+    bsp_uart_screen_swapped = 1;
+  }
+
+  printf("[UART] Screen port = %s (PE13=%s)\r\n",
+         bsp_uart_screen_swapped ? "UART5" : "UART4",
+         bsp_uart_screen_swapped ? "LOW" : "HIGH");
 
   /* 清零所有接收状态 */
   memset((void *)uart_rx_len, 0, sizeof(uart_rx_len));
