@@ -25,6 +25,7 @@ static void screen_handle_settings(uint8_t sub_cmd, uint16_t value);
 static void screen_handle_manual(uint8_t sub_cmd, uint16_t value);
 static void screen_handle_confirm(uint8_t sub_cmd, uint16_t value);
 static void screen_handle_legacy(uint16_t addr, uint16_t value);
+static uint16_t screen_settings_addr(uint8_t sub_cmd);
 
 /* ======================== 命令环形缓冲区 ======================== */
 static volatile scr_cmd_t s_cmd_buf[SCR_CMD_BUF_SIZE];
@@ -44,6 +45,11 @@ static uint8_t s_out_rd = 0;
 /* 外部定时器 */
 extern volatile uint32_t g_tmr4_milliseconds;
 
+static uint16_t screen_settings_addr(uint8_t sub_cmd)
+{
+    return (uint16_t)(((uint16_t)SCR_CMD_TYPE_SETTINGS << 8) | sub_cmd);
+}
+
 /* ======================== ISR 回调 ======================== */
 static void screen_isr_callback(uint8_t cmd, uint16_t addr,
                                 const uint8_t *data, uint16_t data_len)
@@ -59,12 +65,23 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
 
     value = ((uint16_t)data[0] << 8) | data[1];
 
-    /* 页面ID变更检测 */
+    /* 页面ID变更检测（兼容 samplingB 页面字：0x0B/0x15） */
     if (addr == SCR_ADDR_PAGE_ID) {
-        if (value <= SCR_PAGE_STATUS)
+        if (value == SCR_PAGE_HOME ||
+            value == SCR_PANEL_PAGE_BOOT_HOME ||
+            value == SCR_PANEL_PAGE_MAIN_HOME) {
+            s_scr_state.current_page = SCR_PAGE_HOME;
+        } else if (value <= SCR_PAGE_STATUS) {
             s_scr_state.current_page = (scr_page_id_t)value;
-        else
+        } else {
             s_scr_state.current_page = SCR_PAGE_UNKNOWN;
+        }
+        return;  /* 页面切换不入命令队列 */
+    }
+
+    /* samplingB 的主页通知帧映射：5A A5 06 83 00 00 01 80 00 */
+    if (addr == 0x0000u && value == 0x0180u) {
+        s_scr_state.current_page = SCR_PAGE_HOME;
         return;  /* 页面切换不入命令队列 */
     }
 
@@ -266,6 +283,59 @@ void screen_task_init(void)
     s_out_wr = 0;
     s_out_rd = 0;
     printf("[屏幕] 初始化完成\r\n");
+}
+
+void screen_bootstrap_on_powerup(void)
+{
+    /* 同步设置页关键参数，按 samplingB 的 0x50xx 地址体系回写 */
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_MODE), g_sampling_cfg.mode);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_INTERVAL), g_sampling_cfg.interval_min);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_VOLUME), g_sampling_cfg.volume_ml);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_BLOWBACK), g_sampling_cfg.blowback_sec);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_IMPROVE), g_sampling_cfg.improve_sec);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_TUBEHOLD), g_sampling_cfg.tube_hold_sec);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_CYCLETIME), g_sampling_cfg.cycle_time_min);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_ANALYSIS), g_sampling_cfg.analysis_time_min);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_FLOWSTART), g_sampling_cfg.flow_start);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SAMP_FLOWSTOP), g_sampling_cfg.flow_stop);
+
+    screen_write_u16(screen_settings_addr(SCR_SUB_DELIV_HOUR), g_delivery_cfg.start_hour);
+    screen_write_u16(screen_settings_addr(SCR_SUB_DELIV_MIN), g_delivery_cfg.start_min);
+    screen_write_u16(screen_settings_addr(SCR_SUB_DELIV_DURATION), g_delivery_cfg.duration_sec);
+    screen_write_u16(screen_settings_addr(SCR_SUB_DELIV_BACKDRAW), g_delivery_cfg.backdraw_sec);
+    screen_write_u16(screen_settings_addr(SCR_SUB_DELIV_ENABLE), g_delivery_cfg.enable);
+
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_MODE), g_retain_cfg.mode);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_VOLUME), g_retain_cfg.volume_ml);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_PARALLEL), g_retain_cfg.parallel_count);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_MIX), g_retain_cfg.mix_count);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_BLOWBACK), g_retain_cfg.blowback_sec);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_ENABLE), g_retain_cfg.enable);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_ACID), g_retain_cfg.enable_acid);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_TUBEHOLD), g_retain_cfg.tube_hold_sec);
+    screen_write_u16(screen_settings_addr(SCR_SUB_RETAIN_BACKDRAW), g_retain_cfg.backdraw_sec);
+
+    screen_write_u16(screen_settings_addr(SCR_SUB_COMM_PROTOCOL), g_comm_cfg.protocol);
+    screen_write_u16(screen_settings_addr(SCR_SUB_COMM_ADDR), g_comm_cfg.device_addr);
+    screen_write_u16(screen_settings_addr(SCR_SUB_COMM_FLOWLOWER), g_comm_cfg.flow_ad_lower);
+    screen_write_u16(screen_settings_addr(SCR_SUB_SYS_AUTORUN), g_system_setting_cfg.auto_run_mode);
+
+    /* 同步主页状态并发送开机跳页（samplingB 使用0x0B） */
+    screen_update_status();
+    screen_write_u16(0x5240, (uint16_t)scheduler_get_mode());
+    screen_write_u16(0x5241, (uint16_t)scheduler_get_phase());
+    screen_write_u16(0x5242, scheduler_get_active_bucket());
+    screen_write_u16(0x5243, (uint16_t)scheduler_get_total_cycles());
+    screen_write_u16(0x5244, (uint16_t)scheduler_get_total_samples());
+    screen_write_u16(0x5245, (uint16_t)scheduler_get_total_deliveries());
+
+    screen_switch_page((uint8_t)SCR_PANEL_PAGE_BOOT_HOME);
+    screen_switch_page((uint8_t)SCR_PANEL_PAGE_BOOT_HOME);
+    s_scr_state.current_page = SCR_PAGE_HOME;
+    screen_notify_ready();
+
+    printf("[屏幕] 开机同步完成，已发送主页跳转(0x%02X)\r\n",
+           (unsigned int)SCR_PANEL_PAGE_BOOT_HOME);
 }
 
 void screen_poll_commands(void)

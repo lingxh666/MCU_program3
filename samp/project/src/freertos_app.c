@@ -437,28 +437,29 @@ void my_task02_func(void *pvParameters)
   */
 void my_task03_func(void *pvParameters)
 {
+  printf("[Task03] 等待串口屏启动...\r\n");
+  vTaskDelay(pdMS_TO_TICKS(5000));
+
   screen_task_init();
-  vTaskDelay(pdMS_TO_TICKS(500));
+  screen_bootstrap_on_powerup();
 
   /* 通知屏幕就绪 */
   xEventGroupSetBits(my_event01_handle, SCREEN_READY_BIT);
 
   printf("[Task03] 串口屏通信任务启动\r\n");
 
-  static uint32_t last_update_sec = 0;
-
   for (;;)
   {
     /* 1. 处理屏幕接收命令（从ISR环形缓冲区取出） */
     screen_poll_commands();
 
-    /* 2. 周期刷新状态显示（每1秒） */
-    if ((g_tmr2_seconds - last_update_sec) >= 1) {
-      screen_update_status();
-      last_update_sec = g_tmr2_seconds;
-    }
+    /* 2. 处理屏幕外发命令（页面跳转/变量写入） */
+    screen_process_outgoing();
 
-    /* 3. 心跳上报 */
+    /* 3. 主页1秒节流刷新（与samplingB逻辑一致） */
+    screen_refresh_home();
+
+    /* 4. 心跳上报 */
     xEventGroupSetBits(my_event01_handle, TASK03_HB_BIT);
 
     vTaskDelay(pdMS_TO_TICKS(20));  /* 20ms轮询 */

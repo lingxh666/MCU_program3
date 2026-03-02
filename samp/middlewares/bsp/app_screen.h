@@ -113,6 +113,10 @@ typedef enum {
     SCR_PAGE_UNKNOWN  = 0xFF
 } scr_page_id_t;
 
+/* samplingB 页面字定义：用于开机后强制跳页 */
+#define SCR_PANEL_PAGE_BOOT_HOME  0x0B
+#define SCR_PANEL_PAGE_MAIN_HOME  0x15
+
 /* ======================== 屏幕状态跟踪 ======================== */
 typedef struct {
     scr_page_id_t current_page;    /* 当前页面 */
@@ -139,6 +143,7 @@ typedef struct {
 
 /* ======================== 屏幕任务接口 ======================== */
 void screen_task_init(void);
+void screen_bootstrap_on_powerup(void); /* 开机同步配置并跳转主页 */
 void screen_poll_commands(void);     /* Task03 轮询处理命令 */
 void screen_update_status(void);     /* 周期刷新状态显示 */
 void screen_refresh_home(void);      /* 主页综合刷新(1s周期) */
