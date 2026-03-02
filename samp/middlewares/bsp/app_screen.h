@@ -83,6 +83,7 @@ extern "C" {
 #define SCR_ACT_MANUAL_DELIV    0x21  /* 手动送样执行 */
 #define SCR_ACT_MANUAL_RETAIN   0x25  /* 手动留样执行 */
 #define SCR_ACT_BOTTLE_RESET    0x14  /* 留样瓶复位 */
+#define SCR_ACT_LOGIN_CONFIRM   0x37  /* 登录确认 */
 /* 记录查询 */
 #define SCR_ACT_LOG_QUERY       0x81  /* 查询初始化 */
 #define SCR_ACT_LOG_SAMP        0x71  /* 采样记录翻页 */
@@ -96,7 +97,7 @@ extern "C" {
 #define SCR_STATUS_FRAME_LEN    128   /* 状态帧长度 */
 
 /* ======================== 命令缓冲区（ISR → Task） ======================== */
-#define SCR_CMD_BUF_SIZE  8
+#define SCR_CMD_BUF_SIZE  32
 
 typedef struct {
     uint16_t addr;
@@ -116,6 +117,10 @@ typedef enum {
 /* samplingB 页面字定义：用于开机后强制跳页 */
 #define SCR_PANEL_PAGE_BOOT_HOME  0x0B
 #define SCR_PANEL_PAGE_MAIN_HOME  0x15
+#define SCR_PANEL_PAGE_ADMIN      0x6F
+#define SCR_PANEL_PAGE_OPERATOR   0x97
+#define SCR_PANEL_PAGE_SAMPLER    0x99
+#define SCR_PANEL_PAGE_LOGIN_FAIL 0x1B
 
 /* ======================== 屏幕状态跟踪 ======================== */
 typedef struct {

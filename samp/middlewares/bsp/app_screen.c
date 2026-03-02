@@ -42,6 +42,8 @@ static scr_out_cmd_t s_out_buf[SCR_OUT_BUF_SIZE];
 static uint8_t s_out_wr = 0;
 static uint8_t s_out_rd = 0;
 static uint8_t s_bootstrap_done = 0;
+static uint16_t s_login_password = 0;
+static uint8_t s_login_wait_confirm = 0;
 
 /* 外部定时器 */
 extern volatile uint32_t g_tmr4_milliseconds;
@@ -111,6 +113,15 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
 static void screen_handle_settings(uint8_t sub_cmd, uint16_t value)
 {
     switch (sub_cmd) {
+    /* 登录/密码设置（与samplingB兼容） */
+    case 0x01:
+        s_login_wait_confirm = 0;
+        break;
+    case 0x02:
+        s_login_password = value;
+        s_login_wait_confirm = 1;
+        printf("[屏幕] 登录密码缓存=0x%04X\r\n", (unsigned int)s_login_password);
+        break;
     /* 采样设置 */
     case SCR_SUB_SAMP_MODE:      g_sampling_cfg.mode = (uint8_t)value; break;
     case SCR_SUB_SAMP_INTERVAL:  g_sampling_cfg.interval_min = value; break;
@@ -192,6 +203,26 @@ static void screen_handle_confirm(uint8_t sub_cmd, uint16_t value)
         g_state.bottle_current = 0;
         g_state.bottle_next = 1;
         printf("[屏幕] 留样瓶复位\r\n");
+        break;
+    case SCR_ACT_LOGIN_CONFIRM:
+        if (param == 0x01) {
+            uint8_t page = SCR_PANEL_PAGE_LOGIN_FAIL;
+            if (s_login_wait_confirm) {
+                if (s_login_password == 0x091A) {
+                    page = SCR_PANEL_PAGE_ADMIN;
+                } else if (s_login_password == 0x1A0A) {
+                    page = SCR_PANEL_PAGE_OPERATOR;
+                } else if (s_login_password == 0x0000) {
+                    page = SCR_PANEL_PAGE_SAMPLER;
+                }
+            }
+            s_scr_state.current_page = SCR_PAGE_SETTINGS;
+            screen_switch_page(page);
+            printf("[屏幕] 登录确认: pwd=0x%04X -> page=0x%02X\r\n",
+                   (unsigned int)s_login_password, (unsigned int)page);
+            s_login_password = 0;
+            s_login_wait_confirm = 0;
+        }
         break;
     case SCR_ACT_LOG_QUERY: {
         /* param: 0x71=采样 0x72=送样 0x73=留样 0x74=电源 0x75=门禁 */
@@ -301,6 +332,8 @@ void screen_task_init(void)
     s_out_wr = 0;
     s_out_rd = 0;
     s_bootstrap_done = 0;
+    s_login_password = 0;
+    s_login_wait_confirm = 0;
     printf("[屏幕] 初始化完成\r\n");
 }
 
