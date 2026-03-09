@@ -697,12 +697,16 @@ static void screen_handle_confirm(uint8_t sub_cmd, uint16_t value)
             uint8_t page = SCR_PANEL_PAGE_LOGIN_FAIL;
             if (s_login_password == 0x091A) {
                 page = SCR_PANEL_PAGE_ADMIN;
+                s_scr_state.current_page = SCR_PAGE_SETTINGS;
             } else if (s_login_password == 0x1A0A) {
                 page = SCR_PANEL_PAGE_OPERATOR;
+                s_scr_state.current_page = SCR_PAGE_SETTINGS;
             } else if (s_login_password == 0x0000) {
                 page = SCR_PANEL_PAGE_SAMPLER;
+                s_scr_state.current_page = SCR_PAGE_SETTINGS;
+            } else {
+                s_scr_state.current_page = SCR_PAGE_UNKNOWN;
             }
-            s_scr_state.current_page = SCR_PAGE_SETTINGS;
             screen_switch_page(page);
             printf("[屏幕] 登录确认: pwd=0x%04X -> page=0x%02X\r\n",
                    (unsigned int)s_login_password, (unsigned int)page);
