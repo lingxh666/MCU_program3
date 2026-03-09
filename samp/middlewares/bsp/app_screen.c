@@ -131,10 +131,50 @@ static void screen_isr_callback(uint8_t cmd, uint16_t addr,
         return;  /* 页面切换不入命令队列 */
     }
 
-    /* samplingB 的主页通知帧映射：5A A5 06 83 00 00 01 80 00 */
-    if (addr == 0x0000u && (value == 0x0180u || value == 0x8000u)) {
+    /* 登录密码消息：5A A5 06 83 50 02 01 XX XX */
+    if (addr == 0x5002u && data_len >= 3 && data[0] == 0x01) {
+        s_login_password = value;
+        s_login_wait_confirm = 1;
+        printf("[屏幕] 登录密码缓存=0x%04X\r\n", (unsigned int)s_login_password);
+        return;
+    }
+
+    /* 登录确认消息：5A A5 06 83 00 00 01 37 01 */
+    if (addr == 0x0000u && value == 0x3701u) {
+        if (!s_login_wait_confirm) {
+            printf("[屏幕] 登录确认被忽略: 无待确认密码\r\n");
+            return;
+        }
+        uint8_t page = SCR_PANEL_PAGE_LOGIN_FAIL;
+        if (s_login_password == 0x091A) {
+            page = SCR_PANEL_PAGE_ADMIN;
+            s_scr_state.current_page = SCR_PAGE_SETTINGS;
+        } else if (s_login_password == 0x1A0A) {
+            page = SCR_PANEL_PAGE_OPERATOR;
+            s_scr_state.current_page = SCR_PAGE_SETTINGS;
+        } else if (s_login_password == 0x0000) {
+            page = SCR_PANEL_PAGE_SAMPLER;
+            s_scr_state.current_page = SCR_PAGE_SETTINGS;
+        } else {
+            s_scr_state.current_page = SCR_PAGE_UNKNOWN;
+        }
+        screen_switch_page(page);
+        printf("[屏幕] 登录确认: pwd=0x%04X -> page=0x%02X\r\n",
+               (unsigned int)s_login_password, (unsigned int)page);
+        s_login_password = 0;
+        s_login_wait_confirm = 0;
+        return;
+    }
+
+    /* samplingB 的主页通知帧映射：5A A5 06 83 00 00 01 80 XX */
+    if (addr == 0x0000u && (value >> 8) == 0x80) {
         s_scr_state.current_page = SCR_PAGE_HOME;
         return;  /* 页面切换不入命令队列 */
+    }
+
+    /* 其他 0x0000 地址的通知消息，不入队列 */
+    if (addr == 0x0000u) {
+        return;
     }
 
     /* 写入环形缓冲区（无锁，单生产者单消费者安全） */
